@@ -1,0 +1,30 @@
+import { Axis } from "./axis";
+import { EventEmitter } from "./eventEmitter";
+import { Definition, GanttModel } from "./models";
+export declare class Gantt extends EventEmitter {
+    canvas: HTMLCanvasElement;
+    private _width;
+    get width(): number;
+    set width(v: number);
+    private _height;
+    get height(): number;
+    set height(v: number);
+    private _model;
+    get model(): GanttModel;
+    set model(v: GanttModel);
+    private _definition;
+    get definition(): Definition;
+    set definition(v: Definition);
+    private _axis;
+    get axis(): Axis;
+    private get granularity();
+    ctx: CanvasRenderingContext2D;
+    private _invalidateId;
+    private _invalidProperties;
+    private _interactionManager;
+    private _viewModel;
+    constructor(canvas: HTMLCanvasElement);
+    invalidate(...properties: string[]): void;
+    validate(): void;
+    private _onSizeChange;
+}

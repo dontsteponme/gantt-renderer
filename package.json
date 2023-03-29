@@ -1,0 +1,28 @@
+{
+  "name": "@dontsteponme/gantt-renderer",
+  "version": "0.0.1",
+  "description": "Gantt chart rendering layer",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx webpack serve --config webpack.js --mode development",
+    "build": "npx webpack --config webpack.js --mode production"
+  },
+  "keywords": [
+    "gantt",
+    "canvas",
+    "productivity"
+  ],
+  "author": "Ryan Urbach",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/eslint": "^8.21.1",
+    "@types/node": "^18.14.6",
+    "eslint": "^8.35.0",
+    "html-webpack-plugin": "^5.5.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.11.1"
+  }
+}
