@@ -31,5 +31,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/dontsteponme/gantt-renderer.git"
-  }
+  },
+  "types": "./dist/*.d.ts"
 }
