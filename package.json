@@ -2,7 +2,7 @@
   "name": "@dontsteponme/gantt-renderer",
   "version": "0.0.1",
   "description": "Gantt chart rendering layer",
-  "main": "index.js",
+  "main": "dist/bundle.js",
   "scripts": {
     "start": "npx webpack serve --config webpack.js --mode development",
     "build": "npx webpack --config webpack.js --mode production"

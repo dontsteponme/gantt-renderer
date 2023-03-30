@@ -7,5 +7,10 @@
     "preserveConstEnums": true,
     "sourceMap": true,
     "declaration": true,
-  }
+    "outDir": "./dist",
+    "esModuleInterop": true,
+  },
+  "include": [
+    "src/**/*"
+  ],
 }
