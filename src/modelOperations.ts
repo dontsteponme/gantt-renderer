@@ -30,12 +30,14 @@ export const syncLinkedItems = (model: GanttModel, rows: RowModel[] = model.rows
         const item = row.item;
         if (item?.after) {
             const afterRow = findById(model.rows, item.after);
-            // TODO: handle no item with children
-            if (item.start < afterRow?.item.end) {
+            if (item.start !== afterRow?.item.end) {
                 const delta = afterRow.item.end - item.start;
                 item.start = afterRow.item.end;
                 item.end += delta;
             }
+        }
+        if (row.children?.length > 0) {
+            syncLinkedItems(model, row.children);
         }
     }
 };

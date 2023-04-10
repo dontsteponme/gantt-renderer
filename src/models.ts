@@ -30,4 +30,18 @@ export interface Definition {
     rowHeight: number;
     yOffset: number;
     granularity: PeriodType;
+    colors?: {
+        canvas?: string;
+        links?: string;
+        timeline?: string;
+        timelineFont?: string;
+        leftColumn?: string;
+        rowBorder?: string;
+        rowFont?: string;
+        weekend?: string;
+    };
+    fonts?: {
+        rows?: string;
+        timeline?: string;
+    }
 }

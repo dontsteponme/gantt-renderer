@@ -1,3 +1,4 @@
 import { Gantt } from './gantt';
+import { Rect } from './renderHelper';
 
-module.exports = { Gantt: Gantt };
+export { Rect, Gantt };

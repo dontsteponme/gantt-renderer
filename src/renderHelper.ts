@@ -9,15 +9,12 @@ export interface Rect {
     paddingRight?: number;
 }
 
-export interface ViewRect extends Rect, Shape {
+export interface ViewRect extends Rect {
     children?: ViewRect[];
-}
-
-export interface Shape {
     id?: string; // maps to row model
-    type: ShapeType;
-    x: number;
-    y: number;
+    className?: string; // selector
+    interactive?: boolean; // interaction manager cares about it
+    type: ViewRectType;
     borderColor?: string;
     borderWidth?: number;
     backgroundColor?: string;
@@ -32,24 +29,24 @@ export interface Text extends ViewRect {
     textBaseline: CanvasTextBaseline;
 }
 
-export type ShapeType = 'rect' | 'text';
+export type ViewRectType = 'rect' | 'text';
 
 
-export const renderView = (shape: Shape, ctx: CanvasRenderingContext2D) => {
-    if (shape) {
-        switch (shape.type) {
+export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) => {
+    if (ViewRect) {
+        switch (ViewRect.type) {
             case 'text':
-                const text = shape as Text;
+                const text = ViewRect as Text;
                 ctx.font = text.font;
                 ctx.fillStyle = text.color;
                 ctx.textAlign = text.textAlign;
                 ctx.textBaseline = text.textBaseline;
-                ctx.fillText(text.text, text.x, text.y, text.width);
+                ctx.fillText(text.text, text.x, text.y);
                 break;
             case 'rect':
             default:
                 ctx.beginPath();
-                const rect = shape as ViewRect;
+                const rect = ViewRect as ViewRect;
                 if (rect.borderRadius) {
                     ctx.roundRect(rect.x, rect.y, rect.width, rect.height, rect.borderRadius);
                 } else {

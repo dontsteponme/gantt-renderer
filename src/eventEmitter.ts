@@ -4,7 +4,7 @@ export class EventEmitter {
     public on(event: string, callback: Function): void {
         if (this._subscriptions.has(event)) {
             const callbacks = this._subscriptions.get(event);
-            callbacks.push(callback);
+            callbacks?.push(callback);
         } else {
             this._subscriptions.set(event, [callback]);
         }
@@ -14,10 +14,10 @@ export class EventEmitter {
         if (event) {
             if (this._subscriptions.has(event)) {
                 if (callback) {
-                    const callbacks = this._subscriptions.get(event);
-                    const len = callbacks.length;
+                    const callbacks = this._subscriptions.get(event) ?? [];
+                    const len = callbacks?.length ?? 0;
                     for (let i = 0; i < len; i++) {
-                        const _callback = callbacks[i];
+                        const _callback = callbacks?.[i];
                         if (_callback === callback) {
                             callbacks.splice(i, 1);
                             break;
@@ -35,9 +35,9 @@ export class EventEmitter {
     public trigger(event: string, ...data: unknown[]): void {
         if (this._subscriptions.has(event)) {
             const callbacks = this._subscriptions.get(event);
-            const len = callbacks.length;
+            const len = callbacks?.length ?? 0;
             for (let i = 0; i < len; i++) {
-                callbacks[i](...data);
+                callbacks?.[i](...data);
             }
         }
     }

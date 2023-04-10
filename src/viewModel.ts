@@ -1,7 +1,7 @@
 import { Axis } from "./axis";
 import { rowCount } from "./modelOperations";
 import { Definition, GanttModel, RowModel } from "./models";
-import { ViewRect, Shape, Text, Rect, collides } from "./renderHelper";
+import { ViewRect, Text, Rect, collides } from "./renderHelper";
 import { Ticks } from "./ticks";
 
 export const viewModelFromModel = (
@@ -18,11 +18,12 @@ export const viewModelFromModel = (
 
     const axisView = axisViewModel(model, definition, axis, { ...viewport, x: left.width, width: viewport.width - left.width }, ctx);
     const itemView = itemViewModel(model, definition, axis, viewport, left.width, ctx);
+    const links = linksFromRow(model.rows, definition, itemView);
 
     return {
         ...viewport,
         type: 'rect',
-        backgroundColor: 'rgb(240, 240, 240)',
+        backgroundColor: definition.colors?.canvas ?? 'rgb(240, 240, 240)',
         children: [
             axisAreaTop,
             axisView,
@@ -36,10 +37,91 @@ export const viewModelFromModel = (
                     left,
                     rows,
                     itemView,
+                    ...links,
                 ]
             }
         ]
     };
+};
+
+const linksFromRow = (
+    rows: RowModel[],
+    definition: Definition,
+    itemView: ViewRect,
+    index: number = 0
+): ViewRect[] => {
+    let rects: ViewRect[] = [];
+    const len = rows.length;
+    for (let i = 0; i < len; i++) {
+        const row = rows[i];
+        if (row.item?.after) {
+            const afterRow = getById(row.item.after, itemView);
+            const afterItem = getByClassName('item', afterRow.element);
+            const linkedRow = getById(row.id, itemView);
+            const linkedItem = getByClassName('item', linkedRow.element);
+
+            if (afterItem.element && linkedItem.element) {
+                let parent = afterItem.parent;
+                let x = afterItem.element.x + afterItem.element.width;
+                while (parent?.element) {
+                    x += (parent.element.paddingLeft ?? 0) + parent.element.x;
+                    parent = parent.parent;
+                }
+
+                const afterAbove = afterRow.element.y < linkedRow.element.y;
+                rects.push({
+                    type: 'rect',
+                    x: x,
+                    y: (afterAbove ? afterRow.element.y : linkedRow.element.y) + definition.rowHeight / 2,
+                    width: 1,
+                    height: Math.abs(afterRow.element.y - linkedRow.element.y),
+                    backgroundColor: definition.colors?.links ?? '#ffffff',
+                });
+            }
+        }
+
+        index += 1;
+        if (row.children?.length > 0) {
+            rects = rects.concat(linksFromRow(row.children, definition, itemView, index));
+        }
+    }
+    return rects;
+};
+
+const getByClassName = (name: string, shape: ViewRect, parent: IElementWithParent | null = null): IElementWithParent | null => {
+    if (!shape) {
+        return null;
+    }
+    if (name === shape.className) {
+        return new ElementWithParent(shape, parent);
+    }
+    const rect = shape as ViewRect;
+    if (rect.children?.length > 0) {
+        const len = rect.children.length;
+        for (let i = 0; i < len; i++) {
+            const test = getByClassName(name, rect.children[i], new ElementWithParent(rect, parent));
+            if (test) {
+                return test;
+            }
+        }
+    }
+    return null;
+};
+
+const getById = (id: string, rect: ViewRect, parent: IElementWithParent | null = null): IElementWithParent | null => {
+    if (id === rect.id) {
+        return new ElementWithParent(rect, parent);
+    }
+    if (rect.children) {
+        const len = rect.children.length;
+        for (let i = 0; i < len; i++) {
+            const test = getById(id, rect.children[i], new ElementWithParent(rect, parent));
+            if (test) {
+                return test;
+            }
+        }
+    }
+    return null;
 };
 
 const itemViewModel = (
@@ -53,7 +135,9 @@ const itemViewModel = (
     return {
         ...viewport,
         type: 'rect',
-        children: itemsFromRows(model.rows, axis, definition, {...viewport, paddingLeft: columnWidth })
+        className: 'canvas',
+        interactive: true,
+        children: itemsFromRows(model.rows, axis, definition, { ...viewport, paddingLeft: columnWidth })
     };
 };
 
@@ -68,42 +152,122 @@ const itemsFromRows = (rows: RowModel[], axis: Axis, definition: Definition, vie
             const end = axis.toPoint(row.item.end);
             rects.push({
                 type: 'rect',
+                interactive: true,
+                className: 'row',
                 id: row.id,
                 ...viewport,
-                y: y,
+                y: y + definition.yOffset,
                 height: definition.rowHeight,
                 paddingTop: 8,
                 paddingBottom: 8,
-                children: [{
-                    type: 'rect',
-                    x: start,
-                    y: 0,
-                    width: end - start,
-                    height: definition.rowHeight,
-                    backgroundColor: 'purple',
-                    children: [
-                        {
-                            type: 'rect',
-                            x: end - start - 14,
-                            y: 4,
-                            height: definition.rowHeight - 24,
-                            width: 8,
-                            id: 'handle',
-                            backgroundColor: 'black'
-                        }
-                    ]
-                } as ViewRect]
+                children: [
+                    item({
+                        type: 'rect',
+                        className: 'item',
+                        x: start,
+                        y: 0,
+                        width: end - start,
+                        height: definition.rowHeight - 16,
+                        backgroundColor: row.item.color,
+                        borderRadius: 3,
+                    },
+                        definition)
+                ]
             } as ViewRect);
         }
         y += definition.rowHeight;
-        if (row.children.length > 0) {
+        if (row.children?.length > 0) {
             rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, y));
             y += rowCount(row.children) * definition.rowHeight;
         }
     }
 
     return rects;
-}
+};
+
+const item = (rect: ViewRect, definition: Definition): ViewRect => {
+
+    const borderWidth: number = 4;
+    const circleDiameter = Math.floor(rect.height / 2) - borderWidth;
+    const circleRadius = circleDiameter / 2;
+    const circleLeft: ViewRect = {
+        type: 'rect',
+        x: borderWidth / 2,
+        y: (rect.height - circleDiameter) / 2,
+        width: circleDiameter,
+        height: circleDiameter,
+        borderRadius: circleDiameter,
+        className: 'circleLeft',
+        backgroundColor: definition.colors?.links ?? '#ffffff',
+        borderColor: rect.backgroundColor,
+        borderWidth: borderWidth,
+        interactive: true,
+    };
+    const circleRight = {
+        ...circleLeft,
+        x: rect.width + borderWidth / 2,
+        backgroundColor: definition.colors?.links ?? '#ffffff',
+        className: 'circleRight',
+        interactive: false,
+    };
+
+    const parentRect = { ...rect };
+    parentRect.x -= circleRadius;
+    parentRect.width += circleDiameter + borderWidth;
+    parentRect.children = [rect, circleLeft, circleRight];
+    delete parentRect.backgroundColor;
+    delete parentRect.className;
+
+    const handle: ViewRect = {
+        type: 'rect',
+        x: rect.width - circleDiameter - 8,
+        y: 4,
+        height: rect.height - 8,
+        width: 8,
+        interactive: true,
+        className: 'handle',
+        children: [
+            {
+                type: 'rect',
+                x: 1,
+                y: 0,
+                width: 1,
+                height: rect.height - 8,
+                backgroundColor: 'rgba(0, 0, 0, 0.3)'
+            },
+            {
+                type: 'rect',
+                x: 2,
+                y: 0,
+                width: 1,
+                height: rect.height - 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+            },
+            {
+                type: 'rect',
+                x: 5,
+                y: 0,
+                width: 1,
+                height: rect.height - 8,
+                backgroundColor: 'rgba(0, 0, 0, 0.3)'
+            },
+            {
+                type: 'rect',
+                x: 6,
+                y: 0,
+                width: 1,
+                height: rect.height - 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+            }
+        ]
+    };
+
+    rect.x = circleRadius + borderWidth / 2;
+    rect.y = 0;
+    rect.interactive = true;
+    rect.children = [handle];
+    return parentRect;
+};
 
 const axisViewModel = (
     model: GanttModel,
@@ -133,6 +297,10 @@ const axisViewModel = (
             break;
     }
 
+    const fontColor = definition.colors?.timelineFont ?? '#333333';
+    const font = definition.fonts?.timeline ?? '10pt -apple-system, Helvetica, Calibri';
+    ctx.font = font;
+
     const ticks = new Ticks(axis, definition.granularity);
     let iterator = ticks.iterator();
     let tick = iterator.next();
@@ -147,8 +315,8 @@ const axisViewModel = (
             width: metrics.width,
             height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
             text: text,
-            color: 'black',
-            font: '10pt -apple-system, Helvetica, Calibri',
+            color: fontColor,
+            font: font,
             textAlign: 'center',
             textBaseline: 'bottom'
         } as Text);
@@ -175,10 +343,10 @@ const axisViewModel = (
             children.push({
                 type: 'rect',
                 x: textX,
-                y: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 40,
+                y: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 34,
                 height: viewport.height,
                 width: tomorrowPoint - textX,
-                backgroundColor: 'rgba(0, 0, 0, 0.2)'
+                backgroundColor: definition.colors?.weekend ?? parttern(),
             } as ViewRect)
         }
 
@@ -210,8 +378,8 @@ const axisViewModel = (
             width: metrics.width,
             height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
             text: text,
-            color: '#333',
-            font: '10pt -apple-system, Helvetica, Calibri',
+            color: fontColor,
+            font: font,
             textAlign: 'center',
             textBaseline: 'top'
         } as Text);
@@ -223,6 +391,29 @@ const axisViewModel = (
         ...viewport,
         children: children
     };
+};
+
+let _pattern: CanvasPattern;
+const parttern = () => {
+    if (_pattern) {
+        return _pattern;
+    }
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const color1 = "rgba(0, 0, 0, 0.1)";
+    const color2 = "rgba(255, 255, 255, 0)";
+    const numberOfStripes = 100;
+    for (var i = 0; i < numberOfStripes * 2; i++) {
+        const thickness = 300 / numberOfStripes;
+        ctx.beginPath();
+        ctx.strokeStyle = i % 2 ? color1 : color2;
+        ctx.lineWidth = thickness;
+        ctx.moveTo(i * thickness + thickness / 2 - 300, 0);
+        ctx.lineTo(0 + i * thickness + thickness / 2, 300);
+        ctx.stroke();
+    }
+    _pattern = ctx.createPattern(canvas, 'repeat');
 };
 
 const axisAreaModel = (
@@ -237,7 +428,7 @@ const axisAreaModel = (
         y: 0,
         width: viewport.width,
         height: definition.rowHeight,
-        backgroundColor: 'white',
+        backgroundColor: definition.colors?.timeline ?? '#ffffff',
         children: []
     };
 };
@@ -258,7 +449,7 @@ const rowLinesViewModel = (
             height: 1,
             x: 0,
             y: (i + 1) * definition.rowHeight + definition.yOffset,
-            backgroundColor: 'rgb(230, 230, 230)'
+            backgroundColor: definition.colors?.rowBorder ?? 'rgb(230, 230, 230)'
         });
     }
     return {
@@ -287,7 +478,7 @@ const leftColumnViewModel = (
     return {
         ...rect,
         type: 'rect',
-        backgroundColor: 'white',
+        backgroundColor: definition.colors?.leftColumn ?? '#ffffff',
         children: rowLabels(model.rows, definition, 5, definition.yOffset, rect, ctx)
     };
 };
@@ -334,11 +525,26 @@ const textFromLabel = (label: string, x: number, y: number): Text => {
     };
 };
 
-class ElementWithParent {
-    constructor(public element: Shape, public parent: ElementWithParent | null) {}
+export interface IElementWithParent {
+    element: ViewRect;
+    parent: IElementWithParent | null;
+}
+class ElementWithParent implements IElementWithParent {
+    constructor(public element: ViewRect, public parent: ElementWithParent | null) { }
 }
 
-export const elementInView = (rect: Rect, element: ViewRect, parent: ElementWithParent = null): ElementWithParent | null => {
+export const interactiveElementInView = (rect: Rect | undefined, element: ViewRect | undefined): IElementWithParent | null => {
+    let el = elementInView(rect, element);
+    while (Boolean(el) && !Boolean(el.element.interactive)) {
+        el = el.parent;
+    }
+    return el;
+};
+
+export const elementInView = (rect: Rect | undefined, element: ViewRect | undefined, parent: ElementWithParent = null): IElementWithParent | null => {
+    if (!rect || !element) {
+        return null;
+    }
     if (collides(rect, element)) {
         const childrenLen = element.children?.length ?? 0;
         if (childrenLen > 0) {
@@ -366,4 +572,41 @@ export const elementInView = (rect: Rect, element: ViewRect, parent: ElementWith
     return null
 };
 
+export const offsetRect = (el: ElementWithParent): Rect => {
+    let paddingLeft = (el.element as ViewRect).paddingLeft ?? 0;
+    let paddingTop = (el.element as ViewRect).paddingTop ?? 0;
+    const rect: Rect = {
+        x: el.element.x + paddingLeft,
+        y: el.element.y + paddingTop,
+        ...shapeMetrics(el.element)
+    };
+
+    while (el.parent) {
+        el = el.parent;
+        paddingLeft = (el.element as ViewRect).paddingLeft ?? 0;
+        paddingTop = (el.element as ViewRect).paddingTop ?? 0;
+
+        rect.x += el.element.x + paddingLeft;
+        rect.y += el.element.y + paddingTop;
+    }
+
+    return rect;
+};
+
+export const shapeMetrics = (shape: ViewRect): { width: number, height: number } => {
+    const shapeAsAny = shape as any;
+    let width: number | undefined;
+    let height: number | undefined;
+    if (typeof shapeAsAny.width === 'number') {
+        width = shapeAsAny.width;
+    }
+    if (typeof shapeAsAny.height === 'number') {
+        height = shapeAsAny.height;
+    }
+
+    return {
+        width: width,
+        height: height,
+    };
+};
 

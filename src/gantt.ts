@@ -1,14 +1,14 @@
 import { Axis } from "./axis";
 import { EventEmitter } from "./eventEmitter";
 import { InteractionManager } from "./interactionManager";
-import { axisExtrema, DAY, findById, rowCount } from "./modelOperations";
-import { Definition, GanttModel, PeriodType, RowModel } from "./models";
-import { renderView, Shape, ViewRect } from "./renderHelper";
-import { elementInView, viewModelFromModel } from "./viewModel";
+import { axisExtrema, DAY, findById, rowCount, syncLinkedItems } from "./modelOperations";
+import { Definition, GanttModel, ItemModel, PeriodType, RowModel } from "./models";
+import { renderView, ViewRect } from "./renderHelper";
+import { elementInView, IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
 
 export class Gantt extends EventEmitter {
 
-    private _width: number;
+    private _width: number = 0;
     public get width(): number {
         return this._width;
     }
@@ -19,7 +19,7 @@ export class Gantt extends EventEmitter {
         }
     }
 
-    private _height: number;
+    private _height: number = 0;
     public get height(): number {
         return this._height;
     }
@@ -30,29 +30,32 @@ export class Gantt extends EventEmitter {
         }
     }
 
-    private _model: GanttModel;
-    public get model(): GanttModel {
+    private _model: GanttModel | undefined;
+    public get model(): GanttModel | undefined {
         return this._model;
     }
-    public set model(v: GanttModel) {
+    public set model(v: GanttModel | undefined) {
+        if (this._model && this.model.rows.length === 0) {
+            this._axis = null; // rebuild
+        }
+
         this._model = v;
         this.invalidate('model');
     }
 
-
-    private _definition: Definition;
-    public get definition(): Definition {
+    private _definition: Definition | undefined;
+    public get definition(): Definition | undefined {
         return this._definition;
     }
-    public set definition(v: Definition) {
+    public set definition(v: Definition | undefined) {
         this._definition = v;
         this.invalidate('definition');
     }
 
-    private _axis: Axis;
+    private _axis: Axis | undefined;
     public get axis(): Axis {
         if (!this._axis) {
-            let { min, max } = axisExtrema(this._model.rows, this._definition.granularity);
+            let { min, max } = axisExtrema(this._model?.rows ?? [], this._definition?.granularity ?? 'd');
             if (min === 0) {
                 min = new Date().valueOf() - DAY;
                 max = min + DAY * 7;
@@ -71,47 +74,104 @@ export class Gantt extends EventEmitter {
         return days < 160 ? (days < 30 ? 'd' : 'w') : (days < 730 ? 'm' : 'y');
     }
 
+    public get canvas(): HTMLCanvasElement {
+        return this._canvas;
+    }
+    public set canvas(v: HTMLCanvasElement) {
+        if (v) {
+            this._canvas = v;
+            this.ctx = v.getContext('2d');
+        }
+    }
 
-    public ctx: CanvasRenderingContext2D;
+    public ctx: CanvasRenderingContext2D | null;
 
-    private _invalidateId: number;
+    private _invalidateId: number | undefined;
     private _invalidProperties: string[] = [];
 
     private _interactionManager: InteractionManager = new InteractionManager();
-    private _viewModel: ViewRect;
+    private _viewModel: ViewRect | undefined;
 
-    constructor(public canvas: HTMLCanvasElement) {
+    private _linking: {
+        x0: number,
+        x1: number,
+        y0: number,
+        y1: number,
+        id: string,
+    };
+
+    constructor(private _canvas: HTMLCanvasElement) {
         super();
-        this.ctx = canvas.getContext('2d');
+        this.ctx = _canvas.getContext('2d');
 
         this._interactionManager.addEventListeners();
         this._interactionManager.on('click', (x: number, y: number) => {
-            const hit = elementInView({ x: x, y: y, width: 1, height: 1 }, this._viewModel);
-            if (hit.element.id) {
-                console.log(`row ${hit.element.id} clicked`);
-            } else if (hit.parent.element.id) {
-                console.log(`item ${hit.parent.element.id} clicked`);
-            } else if ((hit.element as ViewRect).children?.some(v => Boolean(v.id))) {
-                console.log('new item');
+            const hit = interactiveElementInView({ x: x, y: y, width: 1, height: 1 }, this._viewModel);
+            if (hit?.element.className) {
+                switch (hit.element.className) {
+                    case 'item':
+                        this.trigger('click', 'item', offsetRect(hit), this._idFromParent(hit.parent));
+                        break;
+                    case 'canvas':
+                        this.trigger('click', 'canvas', offsetRect(hit));
+                        break;
+                    case 'row':
+                        this.trigger('click', 'row', offsetRect(hit));
+                        return;
+                    default:
+                        break;
+                }
             }
+
         });
 
         let dragId: string;
         let resizing: boolean = false;
         this._interactionManager.on('drag', (x: number, y: number, deltaX: number) => {
+            if (this._linking) {
+                this._linking.x1 = x;
+                this._linking.y1 = y;
+                this.invalidate();
+                return;
+            }
             if (!dragId) {
-                const hit = elementInView({ x: x, y: y, width: 1, height: 1 }, this._viewModel);
-                resizing = 'handle' === hit.element.id;
-                dragId = resizing ? hit.parent.parent.element.id : hit.parent.element.id;
+                const hit = interactiveElementInView({ x: x, y: y, width: 1, height: 1 }, this._viewModel);
+                if (hit) {
+                    if (hit.element.className === 'circleLeft') {
+                        this._linking = {
+                            x0: x,
+                            y0: y,
+                            x1: x,
+                            y1: y,
+                            id: this._idFromParent(hit.parent)
+                        };
+                    } else {
+                        resizing = 'handle' === hit.element.className;
+                        dragId = this._idFromParent(resizing ? hit.parent.parent.parent : hit?.parent) ?? '';
+                    }
+                }
             }
             if (dragId) {
-                const value = this._axis.toValue(deltaX) - this._axis.min;
+                const value = (this._axis?.toValue(deltaX) ?? 0) - (this._axis?.min ?? 0);
                 this.trigger('timeChange', dragId, resizing ? 0 : value, value);
             }
         });
+
         this._interactionManager.on('dragend', () => {
             dragId = null;
             resizing = false;
+            if (this._linking) {
+                const hit = elementInView({ x: this._linking.x1, y: this._linking.y1, width: 1, height: 1 }, this._viewModel);
+                if ('item' === hit.element.className) {
+                    const id = this._idFromParent(hit.parent);
+                    const row = findById(this._model.rows, this._linking.id);
+                    if (row?.item) {
+                        row.item.after = id;
+                        this.trigger('after', row.id, id);
+                    }
+                }
+                this._linking = null;
+            }
         });
 
         this._interactionManager.on('zoom', (delta: number) => {
@@ -182,6 +242,7 @@ export class Gantt extends EventEmitter {
             }
         }
 
+        syncLinkedItems(this._model);
         const viewPort = {
             x: 0,
             y: 0,
@@ -193,13 +254,36 @@ export class Gantt extends EventEmitter {
         this._viewModel = viewModelFromModel(this._model, this._definition, this.axis, viewPort, this.ctx);
         renderView(this._viewModel, this.ctx);
         this._invalidProperties.length = 0;
+        if (this._linking) {
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 1;
+            this.ctx.moveTo(this._linking.x0, this._linking.y0);
+            this.ctx.lineTo(this._linking.x1, this._linking.y1);
+            this.ctx.stroke();
+        }
     }
 
     private _onSizeChange(): void {
-        this.canvas.width = this._width * devicePixelRatio;
-        this.canvas.height = this._height * devicePixelRatio;
-        this.canvas.style.width = `${this._width}px`;
-        this.canvas.style.height = `${this._height}px`;
+        this._canvas.width = this._width * devicePixelRatio;
+        this._canvas.height = this._height * devicePixelRatio;
+        this._canvas.style.width = `${this._width}px`;
+        this._canvas.style.height = `${this._height}px`;
         this.ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+
+    public destroy(): void {
+        this._canvas = null;
+        this.ctx = null;
+        this._interactionManager.destroy();
+    }
+
+    private _idFromParent(parent: IElementWithParent): string | undefined {
+        let id: string | undefined;
+        while (!id && parent) {
+            id = parent.element?.id;
+            parent = parent.parent;
+        }
+        return id;
     }
 }

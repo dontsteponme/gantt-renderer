@@ -28,6 +28,11 @@ export class InteractionManager extends EventEmitter {
         this.disableScroll();
     }
 
+    public destroy(): void {
+        this.removeEventListeners();
+        this.off();
+    }
+
     private _handleWheel = (event: WheelEvent) => {
         if ('CANVAS' === (event.target as HTMLElement).tagName) {
             event.preventDefault();
@@ -46,12 +51,13 @@ export class InteractionManager extends EventEmitter {
         }
     };
 
-    private _handleClick = (event: PointerEvent) => {
+    private _handleClick = (event: MouseEvent) => {
         if ((event.target as HTMLElement).tagName === 'CANVAS') {
             if (this._isDragging) {
                 return;
             }
-            this.trigger('click', event.pageX, event.pageY);
+            const { x, y } = this._pointFromEvent(event);
+            this.trigger('click', x, y);
         }
     };
 
@@ -83,10 +89,19 @@ export class InteractionManager extends EventEmitter {
 
     private _handleMove = (event: PointerEvent) => {
         if (this._isDown) {
-            this.trigger('drag', event.pageX, event.pageY, event.pageX - this._prevEvent.pageX, event.pageY - this._prevEvent.pageY);
+            const { x, y } = this._pointFromEvent(event);
+            this.trigger('drag', x, y, event.pageX - this._prevEvent.pageX, event.pageY - this._prevEvent.pageY);
             this._prevEvent = event;
             this._isDragging = true;
         }
+    };
+
+    private _pointFromEvent = (event: PointerEvent | MouseEvent): { x: number, y: number } => {
+        const rect = (event.target as HTMLCanvasElement).getBoundingClientRect();
+        return {
+            x: event.pageX - rect.left,
+            y: event.pageY - rect.top
+        };
     };
 
 }
