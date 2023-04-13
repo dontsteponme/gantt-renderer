@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const DTSMergePlugin = require('./plugins/dtsMerge');
 
 module.exports = {
   devServer: {
@@ -24,6 +25,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'Gantt Renderer',
     }),
+    new DTSMergePlugin('./dist'),
   ],
   resolve: {
     extensions: ['.tsx', '.ts', '.js', 'json'],
