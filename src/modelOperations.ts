@@ -103,6 +103,10 @@ export const axisExtrema = (rows: RowModel[], granularity: PeriodType): { min: n
             max: maxDate + padding
         };
     } else {
+        const today = new Date();
+        today.setUTCHours(0, today.getTimezoneOffset(), 0, 0);
+        minDate = today.valueOf();
+        maxDate = minDate + DAY * 7;
         return {
             min: minDate,
             max: maxDate

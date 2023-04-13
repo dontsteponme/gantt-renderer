@@ -2,7 +2,7 @@ import { Axis } from "./axis";
 import { EventEmitter } from "./eventEmitter";
 import { InteractionManager } from "./interactionManager";
 import { axisExtrema, DAY, findById, rowCount, syncLinkedItems } from "./modelOperations";
-import { Definition, GanttModel, ItemModel, PeriodType, RowModel } from "./models";
+import { Definition, GanttModel, PeriodType } from "./models";
 import { renderView, ViewRect } from "./renderHelper";
 import { elementInView, IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
 
@@ -56,9 +56,9 @@ export class Gantt extends EventEmitter {
     public get axis(): Axis {
         if (!this._axis) {
             let { min, max } = axisExtrema(this._model?.rows ?? [], this._definition?.granularity ?? 'd');
-            if (min === 0) {
-                min = new Date().valueOf() - DAY;
-                max = min + DAY * 7;
+            if (this._definition.axis) {
+                min = this._definition.axis.start;
+                max = this._definition.axis.end;
             }
             const axis = this._axis = new Axis();
             axis.min = min;
@@ -236,6 +236,12 @@ export class Gantt extends EventEmitter {
             switch (prop) {
                 case 'size':
                     this._onSizeChange();
+                    break;
+                case 'definition':
+                    if (this._definition.axis && this._axis) {
+                        this._axis.min = this._definition.axis.start;
+                        this._axis.max = this._definition.axis.end;
+                    }
                     break;
                 default:
                     break;

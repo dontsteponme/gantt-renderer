@@ -30,6 +30,10 @@ export interface Definition {
     rowHeight: number;
     yOffset: number;
     granularity: PeriodType;
+    axis?: {
+        start: number,
+        end: number,
+    };
     colors?: {
         canvas?: string;
         links?: string;

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+    <script src="bundle.js"></script>
+    <style>
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const gantt = new ganttRenderer.Gantt(canvas);
+        gantt.definition = {
+            rowHeight: 40,
+            yOffset: 0,
+            granularity: 'd',
+            axis: {
+                start: new Date('2023-04-11').valueOf(),
+                end: new Date('2023-06-11').valueOf()
+            }
+        };
+        gantt.model = {
+            rows: [
+                {
+                    id: 'foo',
+                    label: 'foo',
+                    item: {
+                        color: 'red',
+                        start: new Date('2023-04-11').valueOf(),
+                        end: new Date('2023-04-22').valueOf(),
+                    },
+                    children: [],
+                },
+                {
+                    id: 'bar',
+                    label: 'bar',
+                    item: {
+                        color: 'blue',
+                        start: new Date('2023-04-22').valueOf(),
+                        end: new Date('2023-04-25').valueOf(),
+                        after: 'foo',
+                    },
+                    children: [],
+                },
+            ]
+        };
+        gantt.width = canvas.offsetWidth;
+        gantt.height = canvas.offsetHeight;
+    </script>
+  </body>
+</html>

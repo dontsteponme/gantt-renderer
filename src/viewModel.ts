@@ -71,11 +71,22 @@ const linksFromRow = (
                 const afterAbove = afterRow.element.y < linkedRow.element.y;
                 rects.push({
                     type: 'rect',
-                    x: x,
+                    x: x - 1,
                     y: (afterAbove ? afterRow.element.y : linkedRow.element.y) + definition.rowHeight / 2,
-                    width: 1,
+                    width: 2,
                     height: Math.abs(afterRow.element.y - linkedRow.element.y),
                     backgroundColor: definition.colors?.links ?? '#ffffff',
+                });
+                const d = 4;
+                const r = d / 2;
+                rects.push({
+                    type: 'rect',
+                    x: x - r,
+                    y: (afterAbove ? afterRow.element.y - r : linkedRow.element.y + r) + definition.rowHeight / 2,
+                    width: d,
+                    height: d,
+                    backgroundColor: definition.colors?.links ?? '#ffffff',
+                    borderRadius: r,
                 });
             }
         }
@@ -187,8 +198,8 @@ const itemsFromRows = (rows: RowModel[], axis: Axis, definition: Definition, vie
 
 const item = (rect: ViewRect, definition: Definition): ViewRect => {
 
-    const borderWidth: number = 4;
-    const circleDiameter = Math.floor(rect.height / 2) - borderWidth;
+    const borderWidth: number = Math.floor(rect.height / 4) + 1;
+    const circleDiameter = rect.height - borderWidth;
     const circleRadius = circleDiameter / 2;
     const circleLeft: ViewRect = {
         type: 'rect',
@@ -203,11 +214,17 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
         borderWidth: borderWidth,
         interactive: true,
     };
-    const circleRight = {
-        ...circleLeft,
-        x: rect.width + borderWidth / 2,
-        backgroundColor: definition.colors?.links ?? '#ffffff',
+
+    const rightDiameter: number = Math.floor(rect.height / 2);
+    const circleRight: ViewRect = {
+        type: 'rect',
+        x: rect.width + circleRadius + (borderWidth - rightDiameter) / 2,
+        y: (rect.height - rightDiameter) / 2,
+        width: rightDiameter,
+        height: rightDiameter,
+        borderRadius: circleDiameter,
         className: 'circleRight',
+        backgroundColor: rect.backgroundColor,
         interactive: false,
     };
 
@@ -220,10 +237,10 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
 
     const handle: ViewRect = {
         type: 'rect',
-        x: rect.width - circleDiameter - 8,
+        x: rect.width - (circleRadius + (borderWidth - rightDiameter) / 2) - 8,
         y: 4,
         height: rect.height - 8,
-        width: 8,
+        width: circleDiameter + 8,
         interactive: true,
         className: 'handle',
         children: [
@@ -494,11 +511,13 @@ const rowLabels = (
     let shapes: ViewRect[] = [];
     let labelY: number = definition.rowHeight / 2;
 
+    const font = definition.fonts?.rows ?? '10pt -apple-system, Helvetica, Calibri';
+    const color = definition.colors?.rowFont ?? '#000000';
     const len: number = rows.length;
     for (let i = 0; i < len; i++) {
         const row = rows[i];
         if (collides(viewport, { x: x, y: y, width: 1, height: definition.rowHeight })) {
-            shapes.push(textFromLabel(row.label, x, y + labelY));
+            shapes.push(textFromLabel(row.label, font, color, x, y + labelY));
         }
         y += definition.rowHeight;
 
@@ -510,12 +529,12 @@ const rowLabels = (
     return shapes;
 }
 
-const textFromLabel = (label: string, x: number, y: number): Text => {
+const textFromLabel = (label: string, font: string, color: string, x: number, y: number): Text => {
     return {
         type: 'text',
-        font: '10pt -apple-system, Helvetica, Calibri',
+        font: font,
         text: label,
-        color: '#000',
+        color: color,
         width: Number.MAX_SAFE_INTEGER,
         height: 12,
         textAlign: 'left',
