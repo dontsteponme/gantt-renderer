@@ -16,9 +16,10 @@ export const viewModelFromModel = (
     const left = leftColumnViewModel(model, definition, viewport, ctx);
     const rows = rowLinesViewModel(model, definition, viewport, ctx);
 
+    const labelArea = Math.ceil(labelHeight(model.rows, definition, ctx)) + 4;
     const axisView = axisViewModel(model, definition, axis, { ...viewport, x: left.width, width: viewport.width - left.width }, ctx);
-    const itemView = itemViewModel(model, definition, axis, viewport, left.width, ctx);
-    const links = linksFromRow(model.rows, definition, itemView);
+    const itemView = itemViewModel(model, definition, axis, viewport, left.width, ctx, labelArea);
+    const links = linksFromRow(model.rows, definition, itemView, ctx, 0, labelArea);
 
     return {
         ...viewport,
@@ -44,16 +45,42 @@ export const viewModelFromModel = (
     };
 };
 
+const labelHeight = (rows: RowModel[], definition: Definition, ctx: CanvasRenderingContext2D): number => {
+    const len: number = rows.length;
+    for (let i = 0; i < len; i++) {
+        const row = rows[i];
+        if (row.item?.label) {
+            ctx.save();
+            const font = definition.fonts?.item ?? '10pt -apple-system, Helvetica, Calibri';
+            ctx.font = font;
+            const metrics = ctx.measureText(row.item.label);
+            ctx.restore();
+            return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        }
+        if (row.children?.length) {
+            const childHeight = labelHeight(row.children, definition, ctx);
+            if (childHeight) {
+                return childHeight;
+            }
+        }
+    }
+
+    return 0;
+};
+
 const linksFromRow = (
     rows: RowModel[],
     definition: Definition,
     itemView: ViewRect,
-    index: number = 0
+    ctx: CanvasRenderingContext2D,
+    index: number = 0,
+    labelHeight: number = 0,
 ): ViewRect[] => {
     let rects: ViewRect[] = [];
     const len = rows.length;
     for (let i = 0; i < len; i++) {
         const row = rows[i];
+
         if (row.item?.after) {
             const afterRow = getById(row.item.after, itemView);
             const afterItem = getByClassName('item', afterRow.element);
@@ -69,20 +96,20 @@ const linksFromRow = (
                 }
 
                 const afterAbove = afterRow.element.y < linkedRow.element.y;
-                rects.push({
-                    type: 'rect',
-                    x: x - 1,
-                    y: (afterAbove ? afterRow.element.y : linkedRow.element.y) + definition.rowHeight / 2,
-                    width: 2,
-                    height: Math.abs(afterRow.element.y - linkedRow.element.y),
-                    backgroundColor: definition.colors?.links ?? '#ffffff',
-                });
                 const d = 4;
                 const r = d / 2;
                 rects.push({
                     type: 'rect',
+                    x: x - 1,
+                    y: (afterAbove ? afterRow.element.y : linkedRow.element.y) + (definition.rowHeight + labelHeight) / 2,
+                    width: 2,
+                    height: Math.abs(afterRow.element.y - linkedRow.element.y),
+                    backgroundColor: definition.colors?.links ?? 'rbga(255, 255, 255, 0.4)',
+                });
+                rects.push({
+                    type: 'rect',
                     x: x - r,
-                    y: (afterAbove ? afterRow.element.y - r : linkedRow.element.y + r) + definition.rowHeight / 2,
+                    y: (afterAbove ? afterRow.element.y - r : linkedRow.element.y + r) + (definition.rowHeight + labelHeight) / 2,
                     width: d,
                     height: d,
                     backgroundColor: definition.colors?.links ?? '#ffffff',
@@ -93,7 +120,7 @@ const linksFromRow = (
 
         index += 1;
         if (row.children?.length > 0) {
-            rects = rects.concat(linksFromRow(row.children, definition, itemView, index));
+            rects = rects.concat(linksFromRow(row.children, definition, itemView, ctx, index));
         }
     }
     return rects;
@@ -141,26 +168,86 @@ const itemViewModel = (
     axis: Axis,
     viewport: Rect,
     columnWidth: number,
-    ctx: CanvasRenderingContext2D
+    ctx: CanvasRenderingContext2D,
+    labelHeight: number = 0
 ): ViewRect => {
     return {
         ...viewport,
         type: 'rect',
         className: 'canvas',
         interactive: true,
-        children: itemsFromRows(model.rows, axis, definition, { ...viewport, paddingLeft: columnWidth })
+        children: itemsFromRows(model.rows, axis, definition, { ...viewport, paddingLeft: columnWidth }, ctx, labelHeight)
     };
 };
 
-const itemsFromRows = (rows: RowModel[], axis: Axis, definition: Definition, viewport: Rect, y: number = 0): ViewRect[] => {
+const itemsFromRows = (
+    rows: RowModel[],
+    axis: Axis,
+    definition: Definition,
+    viewport: Rect,
+    ctx: CanvasRenderingContext2D,
+    labelHeight: number = 0,
+    y: number = 0,
+): ViewRect[] => {
     let rects: ViewRect[] = [];
     const len: number = rows.length;
+    const fontColor = definition.colors?.itemLabels ?? '#333333';
+    const font = definition.fonts?.item ?? '10pt -apple-system, Helvetica, Calibri';
+    const padding = 8;
+    const itemHeight = definition.rowHeight - labelHeight - padding * 2
 
     for (let i = 0; i < len; i++) {
         const row = rows[i];
         if (row.item) {
             const start = axis.toPoint(row.item.start);
             const end = axis.toPoint(row.item.end);
+            const children: ViewRect[] = [];
+
+            if (row.item.label) {
+                children.push({
+                    type: 'text',
+                    x: start,
+                    y: 0,
+                    width: 100,
+                    height: labelHeight,
+                    textAlign: 'left',
+                    text: row.item.label,
+                    font: font,
+                    color: fontColor,
+                    textBaseline: 'top'
+                } as Text);
+            }
+
+            const labelY = y + definition.yOffset + labelHeight + (definition.rowHeight - labelHeight - padding * 2) / 2;
+            if (row.item.startLabel) {
+                children.push({
+                    type: 'text',
+                    x: start - itemHeight / 2,
+                    y: labelY,
+                    width: 1,
+                    height: definition.rowHeight,
+                    textAlign: 'right',
+                    text: row.item.startLabel,
+                    font: font,
+                    color: fontColor,
+                    textBaseline: 'middle'
+                } as Text);
+            }
+            if (row.item.endLabel) {
+                children.push({
+                    type: 'text',
+                    x: end + itemHeight / 2,
+                    y: labelY,
+                    width: 1,
+                    height: definition.rowHeight,
+                    textAlign: 'left',
+                    text: row.item.endLabel,
+                    font: font,
+                    color: fontColor,
+                    textBaseline: 'middle'
+                } as Text);
+            }
+
             rects.push({
                 type: 'rect',
                 interactive: true,
@@ -169,30 +256,30 @@ const itemsFromRows = (rows: RowModel[], axis: Axis, definition: Definition, vie
                 ...viewport,
                 y: y + definition.yOffset,
                 height: definition.rowHeight,
-                paddingTop: 8,
-                paddingBottom: 8,
-                children: [
+                paddingTop: padding,
+                paddingBottom: padding,
+                children: children.concat([
                     item({
-                        type: 'rect',
-                        className: 'item',
-                        x: start,
-                        y: 0,
-                        width: end - start,
-                        height: definition.rowHeight - 16,
-                        backgroundColor: row.item.color,
-                        borderRadius: 3,
-                    },
+                            type: 'rect',
+                            className: 'item',
+                            x: start,
+                            y: labelHeight,
+                            width: end - start,
+                            height: itemHeight,
+                            backgroundColor: row.item.color,
+                            borderRadius: 3,
+                        },
                         definition)
-                ]
+                ])
             } as ViewRect);
         }
         y += definition.rowHeight;
         if (row.children?.length > 0) {
-            rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, y));
+            rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, ctx, labelHeight, y));
             y += rowCount(row.children) * definition.rowHeight;
         }
     }
-
+    ctx.save();
     return rects;
 };
 
@@ -360,7 +447,7 @@ const axisViewModel = (
             children.push({
                 type: 'rect',
                 x: textX,
-                y: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 34,
+                y: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 41,
                 height: viewport.height,
                 width: tomorrowPoint - textX,
                 backgroundColor: definition.colors?.weekend ?? parttern(),
@@ -555,6 +642,18 @@ class ElementWithParent implements IElementWithParent {
 export const interactiveElementInView = (rect: Rect | undefined, element: ViewRect | undefined): IElementWithParent | null => {
     let el = elementInView(rect, element);
     while (Boolean(el) && !Boolean(el.element.interactive)) {
+        const len = el.element.children?.length ?? 0;
+        for (let i = 0; i < len; i++) {
+            const childRect = {
+                ...rect,
+                x: rect.x - el.element.x - (el.element.paddingLeft ?? 0),
+                y: rect.y - el.element.y - (el.element.paddingTop ?? 0)
+            };
+            const child = elementInView(childRect, el.element.children[i]);
+            if (child?.element?.interactive) {
+                return child;
+            }
+        }
         el = el.parent;
     }
     return el;

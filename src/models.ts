@@ -16,6 +16,8 @@ export interface ItemModel {
     label?: string;
     start: number;
     end: number;
+    startLabel?: string;
+    endLabel?: string;
     color?: string;
     after?: string;
 }
@@ -43,9 +45,11 @@ export interface Definition {
         rowBorder?: string;
         rowFont?: string;
         weekend?: string;
+        itemLabels?: string;
     };
     fonts?: {
         rows?: string;
         timeline?: string;
+        item?: string;
     }
 }

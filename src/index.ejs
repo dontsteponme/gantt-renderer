@@ -25,7 +25,7 @@
         const canvas = document.getElementById('canvas');
         const gantt = new ganttRenderer.Gantt(canvas);
         gantt.definition = {
-            rowHeight: 40,
+            rowHeight: 50,
             yOffset: 0,
             granularity: 'd',
             axis: {
@@ -39,9 +39,12 @@
                     id: 'foo',
                     label: 'foo',
                     item: {
+                        // label: 'item',
                         color: 'red',
                         start: new Date('2023-04-11').valueOf(),
                         end: new Date('2023-04-22').valueOf(),
+                        startLabel: '2023-04-11',
+                        endLabel: '2023-04-22',
                     },
                     children: [],
                 },
@@ -49,6 +52,7 @@
                     id: 'bar',
                     label: 'bar',
                     item: {
+                        // label: 'item 2',
                         color: 'blue',
                         start: new Date('2023-04-22').valueOf(),
                         end: new Date('2023-04-25').valueOf(),
@@ -60,6 +64,10 @@
         };
         gantt.width = canvas.offsetWidth;
         gantt.height = canvas.offsetHeight;
+
+        gantt.on('click', (...args) => {
+            console.log.apply(null, args);
+        });
     </script>
   </body>
 </html>
