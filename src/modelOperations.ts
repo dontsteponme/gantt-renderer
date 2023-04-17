@@ -84,34 +84,10 @@ export const axisExtrema = (rows: RowModel[], granularity: PeriodType): { min: n
             maxDate = maxDate > row.item.end ? maxDate : row.item.end;
         }
     }
-    if (maxDate > 0 && minDate < Number.MAX_SAFE_INTEGER) {
-        let padding: number = DAY;
-        switch (granularity) {
-            case 'd':
-                padding *= 2;
-                break;
-            case 'w':
-                padding *= 7;
-                break;
-            case 'm':
-            default:
-                padding *= 30;
-                break;
-        }
-        return {
-            min: minDate - padding,
-            max: maxDate + padding
-        };
-    } else {
-        const today = new Date();
-        today.setUTCHours(0, today.getTimezoneOffset(), 0, 0);
-        minDate = today.valueOf();
-        maxDate = minDate + DAY * 7;
-        return {
-            min: minDate,
-            max: maxDate
-        };
-    }
+    return {
+        min: minDate,
+        max: maxDate
+    };
 };
 
 export const validateModel = (model: GanttModel): GanttModel => {

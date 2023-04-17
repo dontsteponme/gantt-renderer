@@ -55,11 +55,35 @@ export class Gantt extends EventEmitter {
     private _axis: Axis | undefined;
     public get axis(): Axis {
         if (!this._axis) {
-            let { min, max } = axisExtrema(this._model?.rows ?? [], this._definition?.granularity ?? 'd');
+            const granularity = this._definition?.granularity ?? 'd';
+            let { min, max } = axisExtrema(this._model?.rows ?? [], granularity);
             if (this._definition.axis) {
                 min = this._definition.axis.start;
                 max = this._definition.axis.end;
+            } else {
+                if (min === Number.MAX_SAFE_INTEGER) {
+                    const today = new Date();
+                    today.setUTCHours(0, today.getTimezoneOffset(), 0, 0);
+                    min = today.valueOf();
+                    max = min + DAY;
+                }
             }
+            let padding: number = DAY;
+            switch (granularity) {
+                case 'd':
+                    padding *= 2;
+                    break;
+                case 'w':
+                    padding *= 7;
+                    break;
+                case 'm':
+                default:
+                    padding *= 30;
+                    break;
+            }
+            min -= padding;
+            max += padding;
+
             const axis = this._axis = new Axis();
             axis.min = min;
             axis.max = max;

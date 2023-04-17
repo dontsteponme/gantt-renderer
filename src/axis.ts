@@ -15,6 +15,6 @@ export class Axis {
 
     public toValue(px: number): number {
         const valueRange = this.max - this.min;
-        return Math.floor(px * valueRange / this.range + this.min);
+        return px * valueRange / this.range + this.min;
     }
 }
