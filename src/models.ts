@@ -2,7 +2,7 @@ export type PeriodType = 'd' | 'w' | 'm' | 'y';
 
 export interface GanttModel {
     rows: RowModel[];
-    milestones: Milestone[]
+    milestones: Milestone[];
 }
 
 export interface RowModel {
@@ -23,7 +23,7 @@ export interface ItemModel {
 }
 
 export interface Milestone {
-    name: string,
+    name?: string,
     date: number,
     color: string,
 }

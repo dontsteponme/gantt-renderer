@@ -1,6 +1,6 @@
 import { Axis } from "./axis";
 import { rowCount } from "./modelOperations";
-import { Definition, GanttModel, RowModel } from "./models";
+import { Definition, GanttModel, Milestone, RowModel } from "./models";
 import { ViewRect, Text, Rect, collides } from "./renderHelper";
 import { Ticks } from "./ticks";
 
@@ -12,14 +12,17 @@ export const viewModelFromModel = (
     ctx: CanvasRenderingContext2D
 ): ViewRect => {
 
+    const milestoneText = model.milestones?.some(v => Boolean(v.name)) ? 12 : 0;
     const axisAreaTop = axisAreaModel(model, definition, viewport, ctx);
     const left = leftColumnViewModel(model, definition, viewport, ctx);
     const rows = rowLinesViewModel(model, definition, viewport, ctx);
 
+    const axisViewport = { ...viewport, x: left.width, width: viewport.width - left.width };
     const labelArea = Math.ceil(labelHeight(model.rows, definition, ctx)) + 4;
-    const axisView = axisViewModel(model, definition, axis, { ...viewport, x: left.width, width: viewport.width - left.width }, ctx);
+    const axisView = axisViewModel(model, definition, axis, axisViewport, ctx);
     const itemView = itemViewModel(model, definition, axis, viewport, left.width, ctx, labelArea);
     const links = linksFromRow(model.rows, definition, itemView, ctx, 0, labelArea);
+    const references = milestones(model.milestones ?? [], definition, axis, { ...axisViewport, y: axisAreaTop.height - 10 });
 
     return {
         ...viewport,
@@ -40,8 +43,53 @@ export const viewModelFromModel = (
                     itemView,
                     ...links,
                 ]
-            }
+            },
+            references,
         ]
+    };
+};
+
+const milestones = (milestones: Milestone[], definition: Definition, axis: Axis, viewport: Rect): ViewRect => {
+    const viewRects: ViewRect[] = [];
+    const len = milestones.length;
+    for (let i = 0; i < len; i++) {
+        const milestone = milestones[i];
+        const x = axis.toPoint(milestone.date);
+        viewRects.push({
+            type: 'rect',
+            x: x,
+            y: 0,
+            width: 1,
+            height: viewport.height,
+            backgroundColor: milestone.color
+        });
+        if (milestone.name) {
+            const font = definition.fonts?.item ?? '10pt -apple-system, Helvetica, Calibri';
+            viewRects.push({
+                type: 'text',
+                x: x,
+                y: 0,
+                width: 0,
+                height: 0,
+                font: font,
+                textAlign: 'center',
+                textBaseline: 'top',
+                text: milestone.name,
+                color: '#fff',
+                backgroundColor: milestone.color,
+                paddingBottom: 4,
+                paddingLeft: 4,
+                paddingRight: 4,
+                paddingTop: 4,
+                borderRadius: 4,
+            } as Text);
+        }
+    }
+
+    return {
+        type: 'rect',
+        ...viewport,
+        children: viewRects,
     };
 };
 
