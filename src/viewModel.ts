@@ -12,7 +12,6 @@ export const viewModelFromModel = (
     ctx: CanvasRenderingContext2D
 ): ViewRect => {
 
-    const milestoneText = model.milestones?.some(v => Boolean(v.name)) ? 12 : 0;
     const axisAreaTop = axisAreaModel(model, definition, viewport, ctx);
     const left = leftColumnViewModel(model, definition, viewport, ctx);
     const rows = rowLinesViewModel(model, definition, viewport, ctx);
