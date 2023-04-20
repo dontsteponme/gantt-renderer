@@ -4,7 +4,7 @@ import { InteractionManager } from "./interactionManager";
 import { axisExtrema, DAY, findById, rowCount, syncLinkedItems } from "./modelOperations";
 import { Definition, GanttModel, PeriodType } from "./models";
 import { renderView, ViewRect } from "./renderHelper";
-import { elementInView, IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
+import { IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
 
 export class Gantt extends EventEmitter {
 
@@ -87,7 +87,7 @@ export class Gantt extends EventEmitter {
             const axis = this._axis = new Axis();
             axis.min = min;
             axis.max = max;
-            axis.range = this._width;
+            axis.range = this._width - (this._definition?.columnWidth ?? 0);
         }
         return this._axis;
     }
@@ -191,7 +191,7 @@ export class Gantt extends EventEmitter {
             dragId = null;
             resizing = false;
             if (this._linking) {
-                const hit = elementInView({ x: this._linking.x1, y: this._linking.y1, width: 1, height: 1 }, this._viewModel);
+                const hit = interactiveElementInView({ x: this._linking.x1, y: this._linking.y1, width: 1, height: 1 }, this._viewModel);
                 if ('item' === hit.element.className) {
                     const id = this._idFromParent(hit.parent);
                     const row = findById(this._model.rows, this._linking.id);
@@ -271,6 +271,7 @@ export class Gantt extends EventEmitter {
                     if (this._definition.axis && this._axis) {
                         this._axis.min = this._definition.axis.start;
                         this._axis.max = this._definition.axis.end;
+                        this._axis.range = this._width - this._definition.columnWidth;
                     }
                     break;
                 default:
@@ -306,6 +307,7 @@ export class Gantt extends EventEmitter {
         this._canvas.style.width = `${this._width}px`;
         this._canvas.style.height = `${this._height}px`;
         this.ctx.scale(devicePixelRatio, devicePixelRatio);
+        this.axis.range = this._width - this._definition.columnWidth;
     }
 
     public destroy(): void {

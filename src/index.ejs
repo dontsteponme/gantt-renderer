@@ -26,6 +26,7 @@
         const gantt = new ganttRenderer.Gantt(canvas);
         gantt.definition = {
             rowHeight: 50,
+            columnWidth: 200,
             yOffset: 0,
             granularity: 'd',
             axis: {
@@ -75,6 +76,10 @@
         gantt.on('click', (...args) => {
             console.log.apply(null, args);
         });
+        gantt.on('after', (id, after) => {
+            console.log('after', id, after);
+        });
+        window['gantt'] = gantt;
     </script>
   </body>
 </html>

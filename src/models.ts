@@ -30,6 +30,7 @@ export interface Milestone {
 
 export interface Definition {
     rowHeight: number;
+    columnWidth: number;
     yOffset: number;
     granularity: PeriodType;
     axis?: {

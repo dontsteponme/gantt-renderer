@@ -622,7 +622,7 @@ const leftColumnViewModel = (
     const rect = {
         x: 0,
         y: 0,
-        width: 200,
+        width: definition.columnWidth,
         height: viewport.height
     };
 
