@@ -2,12 +2,18 @@ import { Axis } from "./axis";
 import { EventEmitter } from "./eventEmitter";
 import { InteractionManager } from "./interactionManager";
 import { axisExtrema, DAY, findById, rowCount, syncLinkedItems } from "./modelOperations";
-import { Definition, GanttModel, PeriodType } from "./models";
-import { renderView, ViewRect } from "./renderHelper";
+import { Definition, GanttModel, PeriodType, ViewRect } from "./models";
+import { renderView } from "./renderHelper";
 import { IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
 
+/**
+ * Gantt chart control
+ */
 export class Gantt extends EventEmitter {
 
+    /**
+     * Width of chart
+     */
     private _width: number = 0;
     public get width(): number {
         return this._width;
@@ -19,6 +25,9 @@ export class Gantt extends EventEmitter {
         }
     }
 
+    /**
+     * Height of chart
+     */
     private _height: number = 0;
     public get height(): number {
         return this._height;
@@ -30,6 +39,9 @@ export class Gantt extends EventEmitter {
         }
     }
 
+    /**
+     * Gantt model
+     */
     private _model: GanttModel | undefined;
     public get model(): GanttModel | undefined {
         return this._model;
@@ -43,6 +55,9 @@ export class Gantt extends EventEmitter {
         this.invalidate('model');
     }
 
+    /**
+     * Gantt style definition
+     */
     private _definition: Definition | undefined;
     public get definition(): Definition | undefined {
         return this._definition;
@@ -52,6 +67,9 @@ export class Gantt extends EventEmitter {
         this.invalidate('definition');
     }
 
+    /**
+     * Axis for timeline
+     */
     private _axis: Axis | undefined;
     public get axis(): Axis {
         if (!this._axis) {
@@ -92,12 +110,18 @@ export class Gantt extends EventEmitter {
         return this._axis;
     }
 
+    /**
+     * granularity of axis
+     */
     private get granularity(): PeriodType {
         const axisRange = this.axis.max - this.axis.min;
         const days = axisRange / DAY;
         return days < 160 ? (days < 30 ? 'd' : 'w') : (days < 730 ? 'm' : 'y');
     }
 
+    /**
+     * Canvas element
+     */
     public get canvas(): HTMLCanvasElement {
         return this._canvas;
     }
@@ -116,6 +140,9 @@ export class Gantt extends EventEmitter {
     private _interactionManager: InteractionManager = new InteractionManager();
     private _viewModel: ViewRect | undefined;
 
+    /**
+     * xy coordinates for linked line
+     */
     private _linking: {
         x0: number,
         x1: number,
@@ -155,6 +182,7 @@ export class Gantt extends EventEmitter {
 
         });
 
+        // listen for events
         let dragId: string;
         let resizing: boolean = false;
         this._interactionManager.on('drag', (x: number, y: number, deltaX: number) => {
@@ -249,6 +277,10 @@ export class Gantt extends EventEmitter {
         });
     }
 
+    /**
+     * Invalidate chart, wait a frame
+     * @param properties
+     */
     public invalidate(...properties: string[]): void {
         this._invalidProperties = this._invalidProperties.concat(properties);
         if (!this._invalidateId) {
@@ -259,6 +291,9 @@ export class Gantt extends EventEmitter {
         }
     }
 
+    /**
+     * Validate dirty properties and render chart
+     */
     public validate(): void {
         const len = this._invalidProperties.length;
         for (let i = 0; i < len; i++) {
@@ -279,6 +314,7 @@ export class Gantt extends EventEmitter {
             }
         }
 
+        // adjust model inline
         syncLinkedItems(this._model);
         const viewPort = {
             x: 0,
@@ -286,11 +322,19 @@ export class Gantt extends EventEmitter {
             width: this._width,
             height: this._height
         };
+
         this.ctx.clearRect(viewPort.x, viewPort.y, viewPort.width, viewPort.height);
         this._definition.granularity = this.granularity;
+
+        // produce view model from data model
         this._viewModel = viewModelFromModel(this._model, this._definition, this.axis, viewPort, this.ctx);
+
+        // render gant chart
         renderView(this._viewModel, this.ctx);
+
         this._invalidProperties.length = 0;
+
+        // draw line while linking
         if (this._linking) {
             this.ctx.beginPath();
             this.ctx.strokeStyle = '#ffffff';
@@ -301,6 +345,9 @@ export class Gantt extends EventEmitter {
         }
     }
 
+    /**
+     * handle size change
+     */
     private _onSizeChange(): void {
         this._canvas.width = this._width * devicePixelRatio;
         this._canvas.height = this._height * devicePixelRatio;
@@ -310,12 +357,20 @@ export class Gantt extends EventEmitter {
         this.axis.range = this._width - this._definition.columnWidth;
     }
 
+    /**
+     * clean up chart
+     */
     public destroy(): void {
         this._canvas = null;
         this.ctx = null;
         this._interactionManager.destroy();
     }
 
+    /**
+     * Helper method to find id
+     * @param parent
+     * @returns
+     */
     private _idFromParent(parent: IElementWithParent): string | undefined {
         let id: string | undefined;
         while (!id && parent) {

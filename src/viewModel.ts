@@ -1,7 +1,7 @@
 import { Axis } from "./axis";
 import { rowCount } from "./modelOperations";
-import { Definition, GanttModel, Milestone, RowModel } from "./models";
-import { ViewRect, Text, Rect, collides } from "./renderHelper";
+import { Definition, GanttModel, Milestone, RowModel, ViewRect, Text, Rect } from "./models";
+import { collides } from "./renderHelper";
 import { Ticks } from "./ticks";
 
 export const viewModelFromModel = (

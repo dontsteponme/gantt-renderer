@@ -1,6 +1,17 @@
+/**
+ * EventEmitter provides subscribing/triggering events on a subclass
+ */
 export class EventEmitter {
+    /**
+     * subscriptions associated with a given event type
+     */
     private _subscriptions: Map<string, Function[]> = new Map();
 
+    /**
+     * Listens to an event
+     * @param event
+     * @param callback
+     */
     public on(event: string, callback: Function): void {
         if (this._subscriptions.has(event)) {
             const callbacks = this._subscriptions.get(event);
@@ -10,6 +21,11 @@ export class EventEmitter {
         }
     }
 
+    /**
+     * Remvoves event listener(s)
+     * @param event
+     * @param callback
+     */
     public off(event?: string, callback?: Function): void {
         if (event) {
             if (this._subscriptions.has(event)) {
@@ -32,6 +48,11 @@ export class EventEmitter {
         }
     }
 
+    /**
+     * Dispatch an event to a listener
+     * @param event
+     * @param data
+     */
     public trigger(event: string, ...data: unknown[]): void {
         if (this._subscriptions.has(event)) {
             const callbacks = this._subscriptions.get(event);
@@ -42,6 +63,9 @@ export class EventEmitter {
         }
     }
 
+    /**
+     * Clean up
+     */
     public destroy(): void {
         this.off();
     }

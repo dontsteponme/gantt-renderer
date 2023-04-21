@@ -1,38 +1,47 @@
 import { EventEmitter } from "./eventEmitter";
 
+/**
+ * InteractionManager handles gesture detection
+ */
 export class InteractionManager extends EventEmitter {
 
     private _isDown: boolean = false;
     private _isDragging: boolean = false;
     private _prevEvent: PointerEvent | null | undefined;
 
-    public enableScroll(): void {
-        window.addEventListener('wheel', this._handleWheel, { passive: false });
-    }
-
-    public disableScroll(): void {
-        window.removeEventListener('wheel', this._handleWheel);
-    }
-
+    /**
+     * As it says on the tin
+     * Add event listeners
+     */
     public addEventListeners(): void {
         window.addEventListener('pointermove', this._handleMove);
         window.addEventListener('pointerdown', this._handleDown);
         window.addEventListener('click', this._handleClick);
-        this.enableScroll();
+        window.addEventListener('wheel', this._handleWheel, { passive: false });
     }
 
+    /**
+     * Remove event listeners
+     */
     public removeEventListeners(): void {
         window.removeEventListener('pointermove', this._handleMove);
         window.removeEventListener('pointerdown', this._handleDown);
         window.removeEventListener('click', this._handleClick);
-        this.disableScroll();
+        window.removeEventListener('wheel', this._handleWheel);
     }
 
+    /**
+     * Destroy event
+     */
     public destroy(): void {
         this.removeEventListeners();
         this.off();
     }
 
+    /**
+     * Listen to scroll events and pinch-to-zoom gesture
+     * @param event
+     */
     private _handleWheel = (event: WheelEvent) => {
         if ('CANVAS' === (event.target as HTMLElement).tagName) {
             event.preventDefault();
@@ -51,6 +60,11 @@ export class InteractionManager extends EventEmitter {
         }
     };
 
+    /**
+     * Handles a good ol' fashioned click event
+     * @param event
+     * @returns
+     */
     private _handleClick = (event: MouseEvent) => {
         if ((event.target as HTMLElement).tagName === 'CANVAS') {
             if (this._isDragging) {
@@ -61,6 +75,10 @@ export class InteractionManager extends EventEmitter {
         }
     };
 
+    /**
+     * handle down event
+     * @param event
+     */
     private _handleDown = (event: PointerEvent) => {
         if ((event.target as HTMLElement).tagName === 'CANVAS') {
             this._isDown = true;
@@ -69,6 +87,10 @@ export class InteractionManager extends EventEmitter {
         }
     };
 
+    /**
+     * handle up events
+     * @param event
+     */
     private _handleUp = (event: PointerEvent) =>  {
         if (this._isDragging) {
             this.trigger('dragend', event.pageX, event.pageY);
@@ -87,6 +109,10 @@ export class InteractionManager extends EventEmitter {
         this._isDragging = false;
     };
 
+    /**
+     * Handles mouse moves
+     * @param event
+     */
     private _handleMove = (event: PointerEvent) => {
         if (this._isDown) {
             const { x, y } = this._pointFromEvent(event);
@@ -96,6 +122,11 @@ export class InteractionManager extends EventEmitter {
         }
     };
 
+    /**
+     * xy values from a given event
+     * @param event
+     * @returns
+     */
     private _pointFromEvent = (event: PointerEvent | MouseEvent): { x: number, y: number } => {
         const rect = (event.target as HTMLCanvasElement).getBoundingClientRect();
         return {

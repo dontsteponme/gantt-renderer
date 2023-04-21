@@ -54,3 +54,36 @@ export interface Definition {
         item?: string;
     }
 }
+
+export type ViewRectType = 'rect' | 'text';
+
+export interface Rect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    paddingTop?: number;
+    paddingBottom?: number;
+    paddingLeft?: number;
+    paddingRight?: number;
+}
+
+export interface ViewRect extends Rect {
+    children?: ViewRect[];
+    id?: string; // maps to row model
+    className?: string; // selector
+    interactive?: boolean; // interaction manager cares about it
+    type: ViewRectType;
+    borderColor?: string;
+    borderWidth?: number;
+    backgroundColor?: string;
+    borderRadius?: number;
+}
+
+export interface Text extends ViewRect {
+    text: string;
+    font: string;
+    color: string;
+    textAlign: CanvasTextAlign;
+    textBaseline: CanvasTextBaseline;
+}

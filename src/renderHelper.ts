@@ -1,37 +1,10 @@
-export interface Rect {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    paddingTop?: number;
-    paddingBottom?: number;
-    paddingLeft?: number;
-    paddingRight?: number;
-}
+import { Rect, Text, ViewRect } from "./models";
 
-export interface ViewRect extends Rect {
-    children?: ViewRect[];
-    id?: string; // maps to row model
-    className?: string; // selector
-    interactive?: boolean; // interaction manager cares about it
-    type: ViewRectType;
-    borderColor?: string;
-    borderWidth?: number;
-    backgroundColor?: string;
-    borderRadius?: number;
-}
-
-export interface Text extends ViewRect {
-    text: string;
-    font: string;
-    color: string;
-    textAlign: CanvasTextAlign;
-    textBaseline: CanvasTextBaseline;
-}
-
-export type ViewRectType = 'rect' | 'text';
-
-
+/**
+ * Walk through view rect tree and draw items
+ * @param ViewRect
+ * @param ctx
+ */
 export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) => {
     if (ViewRect) {
         const paddingLeft: number = ViewRect.paddingLeft ?? 0;
@@ -127,6 +100,12 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
     }
 };
 
+/**
+ * rectangles collide
+ * @param r0
+ * @param r1
+ * @returns
+ */
 export const collides = (r0: Rect, r1: Rect): boolean => {
     return r0.x < r1.x + r1.width &&
         r0.x + r0.width > r1.x &&

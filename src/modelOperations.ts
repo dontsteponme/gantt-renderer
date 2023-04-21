@@ -1,11 +1,24 @@
 import { GanttModel, PeriodType, RowModel } from "./models";
 
+/**
+ * Day in milliseconds
+ */
 export const DAY = 1000 * 60 * 60 * 24;
 
+/**
+ * give a "unique id"
+ * @returns
+ */
 export const uuid = (): string => {
     return `${window.performance.now()}.${Math.random()}`;
 }
 
+/**
+ * Find a row model by way of a given id
+ * @param rows
+ * @param id
+ * @returns
+ */
 export const findById = (rows: RowModel[], id: string): RowModel | null => {
     const len = rows.length;
     for (let i = 0; i < len; i++) {
@@ -23,6 +36,12 @@ export const findById = (rows: RowModel[], id: string): RowModel | null => {
     return null;
 };
 
+/**
+ * Align items linked with an `after` id
+ * ensures the item starts after the end of the `after` item
+ * @param model
+ * @param rows
+ */
 export const syncLinkedItems = (model: GanttModel, rows: RowModel[] = model.rows): void => {
     const len = rows.length;
     for (let i = 0; i < len; i++) {
@@ -42,6 +61,10 @@ export const syncLinkedItems = (model: GanttModel, rows: RowModel[] = model.rows
     }
 };
 
+/**
+ * ensures the start is before the end value
+ * @param rows
+ */
 export const validateStartEnd = (rows: RowModel[]): void => {
     const len = rows.length;
     for (let i = 0; i < len; i++) {
@@ -67,6 +90,12 @@ export const validateStartEnd = (rows: RowModel[]): void => {
     }
 };
 
+/**
+ * Find the min/max of the start/end values
+ * @param rows
+ * @param granularity
+ * @returns
+ */
 export const axisExtrema = (rows: RowModel[], granularity: PeriodType): { min: number, max: number } => {
     // rows and axis sizing
     let minDate = Number.MAX_SAFE_INTEGER;
@@ -90,12 +119,20 @@ export const axisExtrema = (rows: RowModel[], granularity: PeriodType): { min: n
     };
 };
 
+/**
+ * ensure the model is in ship-shape
+ * @param model
+ * @returns
+ */
 export const validateModel = (model: GanttModel): GanttModel => {
     syncLinkedItems(model);
     validateStartEnd(model.rows);
     return model;
 };
 
+/**
+ * count the rows and their children
+ */
 export const rowCount = (rows: RowModel[]): number => {
     let count = 0;
     const len = rows.length;
