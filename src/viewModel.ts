@@ -20,8 +20,17 @@ export const viewModelFromModel = (
     const labelArea = Math.ceil(labelHeight(model.rows, definition, ctx)) + 4;
     const axisView = axisViewModel(model, definition, axis, axisViewport, ctx);
     const itemView = itemViewModel(model, definition, axis, viewport, left.width, ctx, labelArea);
-    const links = linksFromRow(model.rows, definition, itemView, ctx, 0, labelArea);
     const references = milestones(model.milestones ?? [], definition, axis, { ...axisViewport, y: axisAreaTop.height - 10 });
+    const links = linksFromRow(model.rows, definition, itemView, ctx, 0, labelArea);
+    const linkViewRect: ViewRect = {
+        type: 'rect',
+        x: 0,
+        y: 0,
+        width: viewport.width - left.width,
+        height: viewport.height - axisAreaTop.height,
+        paddingLeft: left.width,
+        children: links,
+    };
 
     return {
         ...viewport,
@@ -40,7 +49,7 @@ export const viewModelFromModel = (
                     left,
                     rows,
                     itemView,
-                    ...links,
+                    linkViewRect,
                 ]
             },
             references,
@@ -167,7 +176,7 @@ const linksFromRow = (
 
         index += 1;
         if (row.children?.length > 0) {
-            rects = rects.concat(linksFromRow(row.children, definition, itemView, ctx, index));
+            rects = rects.concat(linksFromRow(row.children, definition, itemView, ctx, index, labelHeight));
         }
     }
     return rects;
@@ -220,10 +229,11 @@ const itemViewModel = (
 ): ViewRect => {
     return {
         ...viewport,
+        paddingLeft: columnWidth,
         type: 'rect',
         className: 'canvas',
         interactive: true,
-        children: itemsFromRows(model.rows, axis, definition, { ...viewport, paddingLeft: columnWidth }, ctx, labelHeight)
+        children: itemsFromRows(model.rows, axis, definition, viewport, ctx, labelHeight)
     };
 };
 
@@ -696,8 +706,8 @@ export const interactiveElementInView = (rect: Rect | undefined, element: ViewRe
                 x: rect.x - el.element.x - (el.element.paddingLeft ?? 0),
                 y: rect.y - el.element.y - (el.element.paddingTop ?? 0)
             };
-            const child = elementInView(childRect, el.element.children[i]);
-            if (child?.element?.interactive) {
+            const child = interactiveElementInView(childRect, el.element.children[i]);
+            if (child?.element) {
                 return child;
             }
         }

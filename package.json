@@ -1,6 +1,6 @@
 {
   "name": "@dontsteponme/gantt-renderer",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Gantt chart rendering layer",
   "main": "dist/bundle.js",
   "scripts": {

@@ -29,10 +29,14 @@
             columnWidth: 200,
             yOffset: 0,
             granularity: 'd',
+            colors: {
+                itemLabels: 'red',
+                links: 'blue',
+            },
             axis: {
                 start: new Date('2023-04-11').valueOf(),
                 end: new Date('2023-06-11').valueOf()
-            }
+            },
         };
         gantt.model = {
             rows: [
@@ -40,7 +44,7 @@
                     id: 'foo',
                     label: 'foo',
                     item: {
-                        // label: 'item',
+                        label: 'item',
                         color: 'red',
                         start: new Date('2023-04-11').valueOf(),
                         end: new Date('2023-04-22').valueOf(),
@@ -53,7 +57,7 @@
                     id: 'bar',
                     label: 'bar',
                     item: {
-                        // label: 'item 2',
+                        label: 'item 2',
                         color: 'blue',
                         start: new Date('2023-04-22').valueOf(),
                         end: new Date('2023-04-25').valueOf(),
@@ -78,6 +82,12 @@
         });
         gantt.on('after', (id, after) => {
             console.log('after', id, after);
+        });
+        gantt.on('timeChange', (id, startDelta, endDelta) => {
+            const row = gantt.model.rows.find(r => r.id === id);
+            row.item.start += startDelta;
+            row.item.end += endDelta;
+            gantt.model = gantt.model;
         });
         window['gantt'] = gantt;
     </script>
