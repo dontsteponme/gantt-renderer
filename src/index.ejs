@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <meta charset="utf-8">
-    <title><%= htmlWebpackPlugin.options.title %></title>
+    <title>
+        <%= htmlWebpackPlugin.options.title %>
+    </title>
     <script src="bundle.js"></script>
     <style>
         html,
@@ -13,15 +16,37 @@
             margin: 0;
             padding: 0;
         }
+
         canvas {
             width: 100%;
             height: 100%;
         }
+
     </style>
-  </head>
-  <body>
+</head>
+
+<body>
     <canvas id="canvas"></canvas>
     <script>
+        const randomColor = () => {
+            const randomized = () => {
+                let bit = Math.floor(Math.random() * 255).toString(16);
+                if (bit.length === 1) {
+                    bit += bit;
+                }
+                return bit;
+            }
+            return `#${randomized()}${randomized()}${randomized()}`;
+        };
+
+        const randomDate = (offset) => {
+            const day = 1000 * 60 * 60 * 24;
+            const today = new Date();
+            today.setUTCHours(0, today.getTimezoneOffset(), 0, 0);
+            today.setDate(today.getDate() + Math.floor(Math.random() * offset) + offset);
+            return today.valueOf();
+        };
+
         const canvas = document.getElementById('canvas');
         const gantt = new ganttRenderer.Gantt(canvas);
         gantt.definition = {
@@ -38,34 +63,60 @@
                 end: new Date('2023-06-11').valueOf()
             },
         };
+
+        const rows = [];
+        for (let i = 0; i < 40; i++) {
+            const start = randomDate(10);
+            const end = randomDate(20);
+            let startLabel, endLabel;
+            if (Math.random() < 0.2) {
+                startLabel = new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric'
+                }).format(start);
+                endLabel = new Intl.DateTimeFormat('en-US', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric'
+                }).format(end);
+            }
+            const color = randomColor();
+            const row = {
+                id: Math.random().toString(),
+                label: 'row ' + i,
+                item: {
+                    label: 'item ' + i,
+                    color: color,
+                    start: start,
+                    end: end,
+                    startLabel: startLabel,
+                    endLabel: endLabel,
+                },
+                children: [],
+            };
+            rows.push(row);
+
+            const randomLen = Math.floor(Math.random() * 4);
+            if (randomLen === 3) {
+                delete row.item;
+            }
+            for (let j = 0; j < randomLen; j++) {
+                row.children.push({
+                    id: Math.random().toString(),
+                    label: 'row ' + i + '.' + j,
+                    item: {
+                        label: 'item ' + i + '.' + j,
+                        color: color,
+                        start: randomDate(10),
+                        end: randomDate(20),
+                    },
+                    children: [],
+                })
+            }
+        }
         gantt.model = {
-            rows: [
-                {
-                    id: 'foo',
-                    label: 'foo',
-                    item: {
-                        label: 'item',
-                        color: 'red',
-                        start: new Date('2023-04-11').valueOf(),
-                        end: new Date('2023-04-22').valueOf(),
-                        startLabel: '2023-04-11',
-                        endLabel: '2023-04-22',
-                    },
-                    children: [],
-                },
-                {
-                    id: 'bar',
-                    label: 'bar',
-                    item: {
-                        label: 'item 2',
-                        color: 'blue',
-                        start: new Date('2023-04-22').valueOf(),
-                        end: new Date('2023-04-25').valueOf(),
-                        after: 'foo',
-                    },
-                    children: [],
-                },
-            ],
+            rows: rows,
             milestones: [
                 {
                     name: 'today',
@@ -85,11 +136,14 @@
         });
         gantt.on('timeChange', (id, startDelta, endDelta) => {
             const row = gantt.model.rows.find(r => r.id === id);
-            row.item.start += startDelta;
-            row.item.end += endDelta;
-            gantt.model = gantt.model;
+            if (row) {
+                row.item.start += startDelta;
+                row.item.end += endDelta;
+                gantt.model = gantt.model;
+            }
         });
         window['gantt'] = gantt;
     </script>
-  </body>
+</body>
+
 </html>

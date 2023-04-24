@@ -40,7 +40,7 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                             break;
                     }
 
-                    switch (text.textBaseline ){
+                    switch (text.textBaseline ) {
                         case 'middle':
                             background.y = background.y - textHeight / 2 - paddingTop;
                             break;
@@ -61,38 +61,41 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                 break;
             case 'rect':
             default:
-                ctx.beginPath();
+                const path: Path2D = new Path2D();
                 const rect = ViewRect as ViewRect;
                 if (rect.borderRadius) {
-                    ctx.roundRect(rect.x, rect.y, rect.width, rect.height, rect.borderRadius);
+                    path.roundRect(rect.x, rect.y, rect.width, rect.height, rect.borderRadius);
                 } else {
-                    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+                    path.rect(rect.x, rect.y, rect.width, rect.height);
                 }
                 if (rect.backgroundColor) {
                     ctx.fillStyle = rect.backgroundColor;
-                    ctx.fill();
+                    ctx.fill(path);
                 }
                 if (rect.borderColor && rect.borderWidth) {
                     ctx.strokeStyle = rect.borderColor;
                     ctx.lineWidth = rect.borderWidth;
-                    ctx.stroke();
+                    ctx.stroke(path);
                 }
-                if (rect.children?.length) {
+                const len = rect.children?.length ?? 0;
+                if (len) {
                     ctx.save();
-                    const path: Path2D = new Path2D();
+                    const childPath: Path2D = new Path2D();
                     const x = rect.x + paddingLeft;
                     const y = rect.y + paddingTop;
 
-                    path.rect(
+                    childPath.rect(
                         x,
                         y,
                         rect.width - paddingLeft - paddingRight,
                         rect.height - paddingTop - paddingBottom
                     );
 
-                    ctx.clip(path);
+                    ctx.clip(childPath);
                     ctx.translate(x, y);
-                    rect.children.forEach((c) => renderView(c, ctx));
+                    for (let i = 0; i < len; i++) {
+                        renderView(rect.children[i], ctx);
+                    }
                     ctx.restore();
                 }
                 break;

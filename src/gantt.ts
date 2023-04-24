@@ -1,10 +1,10 @@
 import { Axis } from "./axis";
 import { EventEmitter } from "./eventEmitter";
 import { InteractionManager } from "./interactionManager";
-import { axisExtrema, DAY, findById, rowCount, syncLinkedItems } from "./modelOperations";
+import { axisExtrema, DAY, findById, rowCount, validateModel } from "./modelOperations";
 import { Definition, GanttModel, PeriodType, ViewRect } from "./models";
 import { renderView } from "./renderHelper";
-import { IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
+import { getByClassName, IElementWithParent, interactiveElementInView, offsetRect, viewModelFromModel } from "./viewModel";
 
 /**
  * Gantt chart control
@@ -264,12 +264,13 @@ export class Gantt extends EventEmitter {
             }
             if (deltaY) {
                 // TODO: This should come from the parent
-                const count = rowCount(this._model.rows);
+                const count = rowCount(this._model.rows) + 1;
                 const contentHeight: number = count * this.definition.rowHeight;
                 if (contentHeight > this._height) {
+                    const rowArea = getByClassName('rowArea', this._viewModel);
                     let offset = this._definition.yOffset;
                     offset -= deltaY;
-                    offset = Math.max(Math.min(0, offset), -contentHeight + this._height);
+                    offset = Math.max(Math.min(0, offset), -contentHeight + rowArea.element.height);
                     this._definition.yOffset = offset;
                     this.invalidate();
                 }
@@ -315,7 +316,7 @@ export class Gantt extends EventEmitter {
         }
 
         // adjust model inline
-        syncLinkedItems(this._model);
+        validateModel(this._model);
         const viewPort = {
             x: 0,
             y: 0,

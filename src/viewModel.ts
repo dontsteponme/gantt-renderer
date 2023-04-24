@@ -41,6 +41,7 @@ export const viewModelFromModel = (
             axisView,
             {
                 type: 'rect',
+                className: 'rowArea',
                 x: 0,
                 y: axisAreaTop.height,
                 height: viewport.height - axisAreaTop.height,
@@ -182,7 +183,7 @@ const linksFromRow = (
     return rects;
 };
 
-const getByClassName = (name: string, shape: ViewRect, parent: IElementWithParent | null = null): IElementWithParent | null => {
+export const getByClassName = (name: string, shape: ViewRect, parent: IElementWithParent | null = null): IElementWithParent | null => {
     if (!shape) {
         return null;
     }
@@ -255,85 +256,97 @@ const itemsFromRows = (
 
     for (let i = 0; i < len; i++) {
         const row = rows[i];
-        if (row.item) {
-            const start = axis.toPoint(row.item.start);
-            const end = axis.toPoint(row.item.end);
-            const children: ViewRect[] = [];
+        const rowY: number = y + definition.yOffset;
+        // break when we get below the fold
+        if (rowY > viewport.height) {
+            break;
+        }
+        // make sure we are within teh viewport
+        const withinView: boolean = rowY + definition.rowHeight > 0;
+        if (withinView) {
+            if (row.item) {
+                const start = axis.toPoint(row.item.start);
+                const end = axis.toPoint(row.item.end);
+                const children: ViewRect[] = [];
+                if (row.item.label) {
+                    children.push({
+                        type: 'text',
+                        x: start + padding,
+                        y: 0,
+                        width: 100,
+                        height: labelHeight,
+                        textAlign: 'left',
+                        text: row.item.label,
+                        font: font,
+                        color: fontColor,
+                        textBaseline: 'top'
+                    } as Text);
+                }
 
-            if (row.item.label) {
-                children.push({
-                    type: 'text',
-                    x: start,
-                    y: 0,
-                    width: 100,
-                    height: labelHeight,
-                    textAlign: 'left',
-                    text: row.item.label,
-                    font: font,
-                    color: fontColor,
-                    textBaseline: 'top'
-                } as Text);
-            }
+                const labelY = labelHeight + itemHeight / 2;
+                if (row.item.startLabel) {
+                    children.push({
+                        type: 'text',
+                        x: start - itemHeight / 2,
+                        y: labelY,
+                        width: 1,
+                        height: definition.rowHeight,
+                        textAlign: 'right',
+                        text: row.item.startLabel,
+                        font: font,
+                        color: fontColor,
+                        textBaseline: 'middle'
+                    } as Text);
+                }
+                if (row.item.endLabel) {
+                    children.push({
+                        type: 'text',
+                        x: end + itemHeight / 2,
+                        y: labelY,
+                        width: 1,
+                        height: definition.rowHeight,
+                        textAlign: 'left',
+                        text: row.item.endLabel,
+                        font: font,
+                        color: fontColor,
+                        textBaseline: 'middle'
+                    } as Text);
+                }
 
-            const labelY = y + definition.yOffset + labelHeight + (definition.rowHeight - labelHeight - padding * 2) / 2;
-            if (row.item.startLabel) {
-                children.push({
-                    type: 'text',
-                    x: start - itemHeight / 2,
-                    y: labelY,
-                    width: 1,
+                rects.push({
+                    type: 'rect',
+                    interactive: true,
+                    className: 'row',
+                    id: row.id,
+                    ...viewport,
+                    y: rowY,
                     height: definition.rowHeight,
-                    textAlign: 'right',
-                    text: row.item.startLabel,
-                    font: font,
-                    color: fontColor,
-                    textBaseline: 'middle'
-                } as Text);
+                    paddingTop: padding,
+                    paddingBottom: padding,
+                    children: children.concat([
+                        item({
+                                type: 'rect',
+                                className: 'item',
+                                x: start,
+                                y: labelHeight,
+                                width: end - start,
+                                height: itemHeight,
+                                backgroundColor: row.item.color,
+                                borderRadius: 3,
+                            },
+                            definition)
+                    ])
+                } as ViewRect);
             }
-            if (row.item.endLabel) {
-                children.push({
-                    type: 'text',
-                    x: end + itemHeight / 2,
-                    y: labelY,
-                    width: 1,
-                    height: definition.rowHeight,
-                    textAlign: 'left',
-                    text: row.item.endLabel,
-                    font: font,
-                    color: fontColor,
-                    textBaseline: 'middle'
-                } as Text);
-            }
-
-            rects.push({
-                type: 'rect',
-                interactive: true,
-                className: 'row',
-                id: row.id,
-                ...viewport,
-                y: y + definition.yOffset,
-                height: definition.rowHeight,
-                paddingTop: padding,
-                paddingBottom: padding,
-                children: children.concat([
-                    item({
-                            type: 'rect',
-                            className: 'item',
-                            x: start,
-                            y: labelHeight,
-                            width: end - start,
-                            height: itemHeight,
-                            backgroundColor: row.item.color,
-                            borderRadius: 3,
-                        },
-                        definition)
-                ])
-            } as ViewRect);
         }
         y += definition.rowHeight;
         if (row.children?.length > 0) {
-            rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, ctx, labelHeight, y));
-            y += rowCount(row.children) * definition.rowHeight;
+            const childrenHeight = rowCount(row.children) * definition.rowHeight;
+            // check if children will be visible
+            if (y + childrenHeight > 0) {
+                rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, ctx, labelHeight, y));
+            }
+            y += childrenHeight;
         }
     }
     ctx.save();
@@ -390,7 +403,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
         children: [
             {
                 type: 'rect',
-                x: 1,
+                x: 2,
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
@@ -398,7 +411,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
             },
             {
                 type: 'rect',
-                x: 2,
+                x: 3,
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
