@@ -349,7 +349,6 @@ const itemsFromRows = (
             y += childrenHeight;
         }
     }
-    ctx.save();
     return rects;
 };
 

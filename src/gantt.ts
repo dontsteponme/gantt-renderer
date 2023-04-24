@@ -324,7 +324,6 @@ export class Gantt extends EventEmitter {
             height: this._height
         };
 
-        this.ctx.clearRect(viewPort.x, viewPort.y, viewPort.width, viewPort.height);
         this._definition.granularity = this.granularity;
 
         // produce view model from data model
