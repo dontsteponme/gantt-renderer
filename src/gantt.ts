@@ -361,6 +361,7 @@ export class Gantt extends EventEmitter {
      * clean up chart
      */
     public destroy(): void {
+        super.destroy();
         this._canvas = null;
         this.ctx = null;
         this._interactionManager.destroy();
