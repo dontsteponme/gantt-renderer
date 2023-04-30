@@ -36,6 +36,30 @@ export const findById = (rows: RowModel[], id: string): RowModel | null => {
     return null;
 };
 
+export const childrenExtrema = (rows: RowModel[]): { start: number, end: number } => {
+    let start: number = Number.MAX_SAFE_INTEGER;
+    let end: number = Number.MIN_SAFE_INTEGER;
+
+    const len = rows.length;
+    for (let i = 0; i < len; i++) {
+        const row = rows[i];
+        if (row.item) {
+            start = start > row.item.start ? row.item.start : start;
+            end = end < row.item.end ? row.item.end : end;
+        }
+        if (row.children.length) {
+            const child = childrenExtrema(row.children);
+            start = start > child.start ? child.start : start;
+            end = end < child.end ? child.end : end;
+        }
+    }
+
+    return {
+        start: start,
+        end: end
+    };
+};
+
 /**
  * Align items linked with an `after` id
  * ensures the item starts after the end of the `after` item
@@ -133,13 +157,13 @@ export const validateModel = (model: GanttModel): GanttModel => {
 /**
  * count the rows and their children
  */
-export const rowCount = (rows: RowModel[]): number => {
+export const rowCount = (rows: RowModel[], ignoreCollapsed: boolean = false): number => {
     let count = 0;
     const len = rows.length;
     for (let i = 0; i < len; i++) {
         count += 1;
         const row = rows[i];
-        if (row.children) {
+        if (row.children.length && !(row.collapsed && ignoreCollapsed)) {
             count += rowCount(row.children);
         }
     }

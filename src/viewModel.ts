@@ -1,6 +1,6 @@
 import { Axis } from "./axis";
-import { rowCount } from "./modelOperations";
-import { Definition, GanttModel, Milestone, RowModel, ViewRect, Text, Rect } from "./models";
+import { childrenExtrema, rowCount } from "./modelOperations";
+import { Definition, GanttModel, Milestone, RowModel, ViewRect, Text, Rect, Custom } from "./models";
 import { collides } from "./renderHelper";
 import { Ticks } from "./ticks";
 
@@ -18,7 +18,7 @@ export const viewModelFromModel = (
 
     const axisViewport = { ...viewport, x: left.width, width: viewport.width - left.width };
     const labelArea = Math.ceil(labelHeight(model.rows, definition, ctx)) + 4;
-    const axisView = axisViewModel(model, definition, axis, axisViewport, ctx);
+    const axisView = axisViewModel(model, definition, axis, axisViewport, axisAreaTop.height, ctx);
     const itemView = itemViewModel(model, definition, axis, viewport, left.width, ctx, labelArea);
     const references = milestones(model.milestones ?? [], definition, axis, { ...axisViewport, y: axisAreaTop.height - 10 });
     const links = linksFromRow(model.rows, definition, itemView, ctx, 0, labelArea);
@@ -144,7 +144,7 @@ const linksFromRow = (
             const linkedRow = getById(row.id, itemView);
             const linkedItem = getByClassName('item', linkedRow.element);
 
-            if (afterItem.element && linkedItem.element) {
+            if (afterItem?.element && linkedItem?.element) {
                 let parent = afterItem.parent;
                 let x = afterItem.element.x + afterItem.element.width;
                 while (parent?.element) {
@@ -264,10 +264,11 @@ const itemsFromRows = (
         // make sure we are within teh viewport
         const withinView: boolean = rowY + definition.rowHeight > 0;
         if (withinView) {
+            const children: ViewRect[] = [];
+            const labelY = labelHeight + itemHeight / 2;
             if (row.item) {
                 const start = axis.toPoint(row.item.start);
                 const end = axis.toPoint(row.item.end);
-                const children: ViewRect[] = [];
                 if (row.item.label) {
                     children.push({
                         type: 'text',
@@ -283,7 +284,6 @@ const itemsFromRows = (
                     } as Text);
                 }
 
-                const labelY = labelHeight + itemHeight / 2;
                 if (row.item.startLabel) {
                     children.push({
                         type: 'text',
@@ -312,41 +312,99 @@ const itemsFromRows = (
                         textBaseline: 'middle'
                     } as Text);
                 }
-
-                rects.push({
+                children.push(item(
+                    {
+                        type: 'rect',
+                        className: 'item',
+                        x: start,
+                        y: labelHeight,
+                        width: end - start,
+                        height: itemHeight,
+                        backgroundColor: row.item.color,
+                        borderRadius: 3,
+                    },
+                    definition
+                ));
+            } else if (Boolean(row.collapsed) && row.children.length) {
+                const color = row.item?.color ?? fontColor ?? '#000000';
+                const { start, end } = childrenExtrema(row.children);
+                const startPoint = axis.toPoint(start);
+                const width = axis.toPoint(end) - startPoint;
+                children.push({
                     type: 'rect',
-                    interactive: true,
-                    className: 'row',
-                    id: row.id,
-                    ...viewport,
-                    y: rowY,
-                    height: definition.rowHeight,
-                    paddingTop: padding,
-                    paddingBottom: padding,
-                    children: children.concat([
-                        item({
-                                type: 'rect',
-                                className: 'item',
-                                x: start,
-                                y: labelHeight,
-                                width: end - start,
-                                height: itemHeight,
-                                backgroundColor: row.item.color,
-                                borderRadius: 3,
-                            },
-                            definition)
-                    ])
-                } as ViewRect);
+                    interactive: false,
+                    className: 'parentItem',
+                    x: startPoint,
+                    y: labelHeight,
+                    width: width,
+                    height: itemHeight,
+                    children:[
+                        {
+                            type: 'rect',
+                            interactive: false,
+                            x: 0,
+                            y: itemHeight / 2,
+                            width: width,
+                            height: 1,
+                            backgroundColor: color
+                        },
+                        {
+                            type: 'rect',
+                            interactive: false,
+                            x: 0,
+                            y: 0,
+                            width: 1,
+                            height: itemHeight,
+                            backgroundColor: color
+                        },
+                        {
+                            type: 'rect',
+                            interactive: false,
+                            x: width - 1,
+                            y: 0,
+                            width: 1,
+                            height: itemHeight,
+                            backgroundColor: color
+                        },
+                    ],
+                });
+                if (row.collapsedLabel) {
+                    children.push({
+                        type: 'text',
+                        interactive: false,
+                        x: startPoint + width / 2,
+                        y: labelY,
+                        textAlign: 'center',
+                        text: row.collapsedLabel,
+                        font: font,
+                        color: fontColor,
+                        textBaseline: 'bottom'
+                    } as Text);
+                }
             }
+            rects.push({
+                type: 'rect',
+                interactive: true,
+                className: 'row',
+                id: row.id,
+                ...viewport,
+                y: rowY,
+                height: definition.rowHeight,
+                paddingTop: padding,
+                paddingBottom: padding,
+                children: children,
+            } as ViewRect);
         }
         y += definition.rowHeight;
         if (row.children?.length > 0) {
-            const childrenHeight = rowCount(row.children) * definition.rowHeight;
-            // check if children will be visible
-            if (y + childrenHeight > 0) {
-                rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, ctx, labelHeight, y));
+            if (!(Boolean(row.collapsed) && definition.collapsible)) {
+                const childrenHeight = rowCount(row.children) * definition.rowHeight;
+                // check if children will be visible
+                if (y + childrenHeight > 0) {
+                    rects = rects.concat(itemsFromRows(row.children, axis, definition, viewport, ctx, labelHeight, y));
+                }
+                y += childrenHeight;
             }
-            y += childrenHeight;
         }
     }
     return rects;
@@ -379,9 +437,9 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
         width: rightDiameter,
         height: rightDiameter,
         borderRadius: circleDiameter,
-        className: 'circleRight',
+        className: 'handle',
         backgroundColor: rect.backgroundColor,
-        interactive: false,
+        interactive: true,
     };
 
     const parentRect = { ...rect };
@@ -393,28 +451,22 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
 
     const handle: ViewRect = {
         type: 'rect',
-        x: rect.width - (circleRadius + (borderWidth - rightDiameter) / 2) - 8,
-        y: 4,
-        height: rect.height - 8,
-        width: circleDiameter + 8,
+        x: rect.width - (circleRadius + (borderWidth - rightDiameter) / 2) - 10,
+        y: 0,
+        height: rect.height,
+        width: circleDiameter + 10,
         interactive: true,
         className: 'handle',
+        paddingTop: 4,
+        paddingBottom: 4,
         children: [
             {
                 type: 'rect',
-                x: 2,
+                x: 4,
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
                 backgroundColor: 'rgba(0, 0, 0, 0.3)'
-            },
-            {
-                type: 'rect',
-                x: 3,
-                y: 0,
-                width: 1,
-                height: rect.height - 8,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)'
             },
             {
                 type: 'rect',
@@ -422,11 +474,19 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+            },
+            {
+                type: 'rect',
+                x: 7,
+                y: 0,
+                width: 1,
+                height: rect.height - 8,
                 backgroundColor: 'rgba(0, 0, 0, 0.3)'
             },
             {
                 type: 'rect',
-                x: 6,
+                x: 8,
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
@@ -447,6 +507,7 @@ const axisViewModel = (
     definition: Definition,
     axis: Axis,
     viewport: Rect,
+    labelRenderingHeight: number,
     ctx: CanvasRenderingContext2D
 ): ViewRect => {
     const children: ViewRect[] = [];
@@ -473,6 +534,7 @@ const axisViewModel = (
     const fontColor = definition.colors?.timelineFont ?? '#333333';
     const font = definition.fonts?.timeline ?? '10pt -apple-system, Helvetica, Calibri';
     ctx.font = font;
+    let prevLabelRight: number | undefined;
 
     const ticks = new Ticks(axis, definition.granularity);
     let iterator = ticks.iterator();
@@ -481,27 +543,22 @@ const axisViewModel = (
         const text = new Intl.DateTimeFormat('en-US', options).format(tick.value.date);
         const textX = tick.value.position;
         const metrics = ctx.measureText(text);
-        children.push({
-            type: 'text',
-            x: textX,
-            y: 40,
-            width: metrics.width,
-            height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
-            text: text,
-            color: fontColor,
-            font: font,
-            textAlign: 'center',
-            textBaseline: 'bottom'
-        } as Text);
 
-        // children.push({
-        //     type: 'rect',
-        //     x: textX,
-        //     y: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 40,
-        //     height: viewport.height,
-        //     width: 1,
-        //     backgroundColor: 'rgb(230,230,230)'
-        // } as ViewRect);
+        if (typeof prevLabelRight === 'undefined' || prevLabelRight < textX) {
+            children.push({
+                type: 'text',
+                x: textX,
+                y: 40,
+                width: metrics.width,
+                height: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent,
+                text: text,
+                color: fontColor,
+                font: font,
+                textAlign: 'center',
+                textBaseline: 'bottom'
+            } as Text);
+            prevLabelRight = textX + metrics.width;
+        }
 
         // check if weekend
         if (definition.granularity === 'd' && tick.value.date.getUTCDay() % 6 === 0) {
@@ -516,7 +573,7 @@ const axisViewModel = (
             children.push({
                 type: 'rect',
                 x: textX,
-                y: metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent + 41,
+                y: labelRenderingHeight,
                 height: viewport.height,
                 width: tomorrowPoint - textX,
                 backgroundColor: definition.colors?.weekend ?? parttern(),
@@ -526,9 +583,9 @@ const axisViewModel = (
         tick = iterator.next();
     }
 
+    prevLabelRight = undefined;
     iterator = ticks.iterator(definition.granularity === 'd' ? 'm' : 'y');
     tick = iterator.next();
-    let prevLabelRight: number | undefined;
     while (!tick.done) {
         const text = new Intl.DateTimeFormat('en-US', labelOptions).format(tick.value.date);
         const metrics = ctx.measureText(text);
@@ -666,23 +723,83 @@ const rowLabels = (
 ): ViewRect[] => {
     let shapes: ViewRect[] = [];
     let labelY: number = definition.rowHeight / 2;
+    let hasChildren: boolean = definition.collapsible && rows.some(m => m.children.length > 0);
+    const rowPadding = hasChildren ? 14 : 0;
+    x += rowPadding;
 
     const font = definition.fonts?.rows ?? '10pt -apple-system, Helvetica, Calibri';
     const color = definition.colors?.rowFont ?? '#000000';
     const len: number = rows.length;
+
     for (let i = 0; i < len; i++) {
         const row = rows[i];
         if (collides(viewport, { x: x, y: y, width: 1, height: definition.rowHeight })) {
+            // hit target for row
+            shapes.push({
+                type: 'rect',
+                interactive: true,
+                id: row.id,
+                children: [],
+                className: 'row',
+                x: 0,
+                y: y,
+                width: definition.columnWidth,
+                height: definition.rowHeight,
+            });
             shapes.push(textFromLabel(row.label, font, color, x, y + labelY));
         }
         y += definition.rowHeight;
 
-        if (row.children) {
-            shapes = shapes.concat(rowLabels(row.children, definition, x + 10, y, viewport, ctx));
-            y += rowCount(row.children) * definition.rowHeight;
+        if (row.children.length) {
+            let showChildren: boolean = true;
+            if (definition.collapsible && !row.item) {
+                if (row.collapsed) {
+                    shapes.push(arrow(x - rowPadding + 2, y - definition.rowHeight / 2 - 4, 4, 8, 'right', color));
+                    showChildren = false;
+                } else {
+                    shapes.push(arrow(x - rowPadding, y - definition.rowHeight / 2 - 2, 8, 4, 'down', color));
+                }
+            }
+
+            if (showChildren) {
+                shapes = shapes.concat(rowLabels(row.children, definition, x + 10, y, viewport, ctx));
+                y += rowCount(row.children) * definition.rowHeight;
+            }
         }
     }
     return shapes;
+}
+
+const arrow = (x: number, y: number, w: number, h: number, direction: 'right' | 'down', color: string): Custom => {
+    return {
+        x: x,
+        y: y,
+        width: w,
+        height: h,
+        type: 'custom',
+        render: (ctx: CanvasRenderingContext2D, bounds: ViewRect) => {
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 1;
+            switch (direction) {
+                case 'right':
+                    ctx.moveTo(bounds.x, bounds.y);
+                    ctx.lineTo(bounds.x + bounds.width, bounds.y + bounds.height / 2);
+                    ctx.lineTo(bounds.x, bounds.y + bounds.height);
+                    break;
+                case 'down':
+                    ctx.moveTo(bounds.x, bounds.y);
+                    ctx.lineTo(bounds.x + bounds.width / 2, bounds.y + bounds.height);
+                    ctx.lineTo(bounds.x + bounds.width, bounds.y);
+                default:
+                    break;
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
 }
 
 const textFromLabel = (label: string, font: string, color: string, x: number, y: number): Text => {
@@ -710,7 +827,7 @@ class ElementWithParent implements IElementWithParent {
 
 export const interactiveElementInView = (rect: Rect | undefined, element: ViewRect | undefined): IElementWithParent | null => {
     let el = elementInView(rect, element);
-    while (Boolean(el) && !Boolean(el.element.interactive)) {
+    while (Boolean(el) && !Boolean(el.element?.interactive)) {
         const len = el.element.children?.length ?? 0;
         for (let i = 0; i < len; i++) {
             const childRect = {
@@ -768,7 +885,7 @@ export const offsetRect = (el: ElementWithParent): Rect => {
         ...shapeMetrics(el.element)
     };
 
-    while (el.parent) {
+    while (el.parent && el.parent.element) {
         el = el.parent;
         paddingLeft = (el.element as ViewRect).paddingLeft ?? 0;
         paddingTop = (el.element as ViewRect).paddingTop ?? 0;

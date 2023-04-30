@@ -53,6 +53,7 @@
             rowHeight: 50,
             columnWidth: 200,
             yOffset: 0,
+            collapsible: true,
             granularity: 'd',
             colors: {
                 itemLabels: 'red',
@@ -128,8 +129,17 @@
         gantt.width = canvas.offsetWidth;
         gantt.height = canvas.offsetHeight;
 
-        gantt.on('click', (...args) => {
-            console.log.apply(null, args);
+        gantt.on('click', (name, rect, id) => {
+            if (name === 'row') {
+                const row = ganttRenderer.findById(rows, id);
+                if (row && !row.item) {
+                    row.collapsed = !row.collapsed;
+                    row.collapsedLabel = 'children label!';
+                    gantt.invalidate();
+                }
+            } else {
+                console.log(name, rect, id);
+            }
         });
         gantt.on('after', (id, after) => {
             console.log('after', id, after);

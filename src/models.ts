@@ -8,8 +8,10 @@ export interface GanttModel {
 export interface RowModel {
     id: string;
     label: string;
-    item?: ItemModel;
     children: RowModel[];
+    item?: ItemModel;
+    collapsed?: boolean;
+    collapsedLabel?: string;
 }
 
 export interface ItemModel {
@@ -29,10 +31,12 @@ export interface Milestone {
 }
 
 export interface Definition {
-    rowHeight: number;
-    columnWidth: number;
-    yOffset: number;
-    granularity: PeriodType;
+    rowHeight: number; // height of each row
+    footerHeight?: number; // space at bottom when we scoll up. Defaults to rowHeight
+    collapsible?: boolean; // can collapse parents with no item
+    columnWidth: number; // width of the task column
+    yOffset: number; // vertical scroll offset
+    granularity: PeriodType; // desired axis granularity
     axis?: {
         start: number,
         end: number,
@@ -55,7 +59,7 @@ export interface Definition {
     }
 }
 
-export type ViewRectType = 'rect' | 'text';
+export type ViewRectType = 'rect' | 'text' | 'custom';
 
 export interface Rect {
     x: number;
@@ -86,4 +90,8 @@ export interface Text extends ViewRect {
     color: string;
     textAlign: CanvasTextAlign;
     textBaseline: CanvasTextBaseline;
+}
+
+export interface Custom extends ViewRect {
+    render: (ctx: CanvasRenderingContext2D, bounds: ViewRect) => void;
 }

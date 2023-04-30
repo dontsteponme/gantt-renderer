@@ -167,13 +167,14 @@ export class Gantt extends EventEmitter {
                             this.trigger('click', 'link', offsetRect(hit), id);
                             break;
                         }
-                    case 'circleRight':
                     case 'handle':
                     case 'item':
                         this.trigger('click', 'item', offsetRect(hit), this._idFromParent(hit.parent));
                         break;
-                    case 'canvas':
                     case 'row':
+                        this.trigger('click', 'row', offsetRect(hit), this._idFromParent(hit));
+                        break;
+                    case 'canvas':
                     default:
                         this.trigger('click', hit.element.className, offsetRect(hit));
                         break;
@@ -205,7 +206,7 @@ export class Gantt extends EventEmitter {
                         };
                     } else {
                         resizing = 'handle' === hit.element.className;
-                        dragId = this._idFromParent(resizing ? hit.parent.parent.parent : hit?.parent) ?? '';
+                        dragId = this._idFromParent(hit?.parent) ?? '';
                     }
                 }
             }
@@ -264,8 +265,9 @@ export class Gantt extends EventEmitter {
             }
             if (deltaY) {
                 // TODO: This should come from the parent
-                const count = rowCount(this._model.rows) + 1;
-                const contentHeight: number = count * this.definition.rowHeight;
+                const footerHeight = this.definition.footerHeight ?? this.definition.rowHeight;
+                const count = rowCount(this._model.rows, true);
+                const contentHeight: number = count * this.definition.rowHeight + footerHeight;
                 if (contentHeight > this._height) {
                     const rowArea = getByClassName('rowArea', this._viewModel);
                     let offset = this._definition.yOffset;

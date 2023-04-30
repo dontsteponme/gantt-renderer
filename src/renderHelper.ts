@@ -1,4 +1,4 @@
-import { Rect, Text, ViewRect } from "./models";
+import { Custom, Rect, Text, ViewRect } from "./models";
 
 /**
  * Walk through view rect tree and draw items
@@ -58,6 +58,9 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
 
                 ctx.fillStyle = text.color;
                 ctx.fillText(text.text, x, y);
+                break;
+            case 'custom':
+                (ViewRect as Custom).render(ctx, ViewRect);
                 break;
             case 'rect':
             default:
