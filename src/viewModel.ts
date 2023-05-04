@@ -140,8 +140,11 @@ const linksFromRow = (
 
         if (row.item?.after) {
             const afterRow = getById(row.item.after, itemView);
-            const afterItem = getByClassName('item', afterRow.element);
             const linkedRow = getById(row.id, itemView);
+            if (!Boolean(afterRow && linkedRow)) {
+                continue; // drop out. only links to things in view
+            }
+            const afterItem = getByClassName('item', afterRow.element);
             const linkedItem = getByClassName('item', linkedRow.element);
 
             if (afterItem?.element && linkedItem?.element) {

@@ -1,4 +1,4 @@
 import { Gantt } from './gantt';
-import { findById } from './modelOperations';
+import { childrenExtrema, findById } from './modelOperations';
 
-module.exports = { Gantt: Gantt, findById: findById };
+module.exports = { Gantt: Gantt, findById: findById, childrenExtrema: childrenExtrema };
