@@ -70,10 +70,10 @@ export const syncLinkedItems = (model: GanttModel, rows: RowModel[] = model.rows
     const len = rows.length;
     for (let i = 0; i < len; i++) {
         const row = rows[i];
-        const item = row.item;
+        const item = row?.item;
         if (item?.after) {
             const afterRow = findById(model.rows, item.after);
-            if (item.start !== afterRow?.item.end) {
+            if (afterRow?.item && item.start !== afterRow?.item.end) {
                 const delta = afterRow.item.end - item.start;
                 item.start = afterRow.item.end;
                 item.end += delta;

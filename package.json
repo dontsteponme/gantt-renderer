@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npx webpack serve --config webpack.js --mode development",
     "build": "npx webpack --config webpack.js --mode production",
+    "build.dev": "npx webpack --config webpack.js --mode development",
     "test": "jest"
   },
   "keywords": [
