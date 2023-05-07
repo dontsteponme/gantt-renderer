@@ -1,5 +1,5 @@
 import { Axis } from "./axis";
-import { childrenExtrema, rowCount } from "./modelOperations";
+import { childrenExtrema, rowCount, textToFit } from "./modelOperations";
 import { Definition, GanttModel, Milestone, RowModel, ViewRect, Text, Rect, Custom } from "./models";
 import { collides } from "./renderHelper";
 import { Ticks } from "./ticks";
@@ -26,7 +26,7 @@ export const viewModelFromModel = (
         type: 'rect',
         x: 0,
         y: 0,
-        width: viewport.width - left.width,
+        width: viewport.width,
         height: viewport.height - axisAreaTop.height,
         paddingLeft: left.width,
         children: links,
@@ -749,7 +749,21 @@ const rowLabels = (
                 width: definition.columnWidth,
                 height: definition.rowHeight,
             });
-            shapes.push(textFromLabel(row.label, font, color, x, y + labelY));
+            // check is label is too long for given space
+            let metrics = ctx.measureText(row.label);
+            if (metrics.width + x > viewport.width) {
+                ctx.font = font;
+                const fitMetrics = textToFit(row.label, viewport.width - 20 - x, definition.rowHeight, ctx);
+                // const currY = y;
+                const centerY = (definition.rowHeight - fitMetrics.height) / 2;
+                const perLine = fitMetrics.height / fitMetrics.lines.length;
+                fitMetrics.lines.forEach((line: string, i: number) => {
+                    shapes.push(textFromLabel(line, font, color, x, y + perLine * i + centerY, 'top'));
+                });
+                // y = currY;
+            } else {
+                shapes.push(textFromLabel(row.label, font, color, x, y + labelY));
+            }
         }
         y += definition.rowHeight;
 
@@ -805,7 +819,7 @@ const arrow = (x: number, y: number, w: number, h: number, direction: 'right' | 
     };
 }
 
-const textFromLabel = (label: string, font: string, color: string, x: number, y: number): Text => {
+const textFromLabel = (label: string, font: string, color: string, x: number, y: number, baseLine: 'middle' | 'top' = 'middle'): Text => {
     return {
         type: 'text',
         font: font,
@@ -814,7 +828,7 @@ const textFromLabel = (label: string, font: string, color: string, x: number, y:
         width: Number.MAX_SAFE_INTEGER,
         height: 12,
         textAlign: 'left',
-        textBaseline: 'middle',
+        textBaseline: baseLine,
         x: x,
         y: y,
     };

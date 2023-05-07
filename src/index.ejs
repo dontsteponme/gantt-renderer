@@ -21,12 +21,33 @@
             width: 100%;
             height: 100%;
         }
+        .container {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            height: 100%;
+        }
 
+        .left {
+            width: 100px;
+            height: 100%;
+            background-color: bisque;
+        }
+
+        .right {
+            position: relative;
+            flex-grow: 2;
+        }
     </style>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
+    <div class="container">
+        <div class="left"></div>
+        <div class="right">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
     <script>
         const randomColor = () => {
             const randomized = () => {
@@ -131,7 +152,7 @@
                 "rows": [
                     {
                         "id": "66",
-                        "label": "TestTask",
+                        "label": "Test Task this is a new one that is long and will get cut off and it will be super ab asdf ",
                         "item": {
                             "start": 1681743779000,
                             "end": 1681830179000,
@@ -400,7 +421,7 @@
             console.log('after', id, after);
         });
         gantt.on('timeChange', (id, startDelta, endDelta) => {
-            const row = gantt.model.rows.find(r => r.id === id);
+            const row = ganttRenderer.findById(gantt.model.rows, id);
             if (row) {
                 row.item.start += startDelta;
                 row.item.end += endDelta;

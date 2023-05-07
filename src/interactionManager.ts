@@ -17,6 +17,7 @@ export class InteractionManager extends EventEmitter {
         window.addEventListener('pointermove', this._handleMove);
         window.addEventListener('pointerdown', this._handleDown);
         window.addEventListener('click', this._handleClick);
+        window.addEventListener('dblclick', this._handleDoubleClick);
         window.addEventListener('wheel', this._handleWheel, { passive: false });
     }
 
@@ -27,6 +28,7 @@ export class InteractionManager extends EventEmitter {
         window.removeEventListener('pointermove', this._handleMove);
         window.removeEventListener('pointerdown', this._handleDown);
         window.removeEventListener('click', this._handleClick);
+        window.removeEventListener('dblclick', this._handleDoubleClick);
         window.removeEventListener('wheel', this._handleWheel);
     }
 
@@ -46,16 +48,17 @@ export class InteractionManager extends EventEmitter {
         if ('CANVAS' === (event.target as HTMLElement).tagName) {
             event.preventDefault();
             event.stopImmediatePropagation();
-        }
-        if (event.ctrlKey) {
-            // zoom
-            this.trigger('zoom', event.deltaY);
-        } else {
-            const horizontalScroll = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-            if (horizontalScroll) {
-                this.trigger('scroll', event.deltaX, 0);
+
+            if (event.ctrlKey) {
+                // zoom
+                this.trigger('zoom', event.deltaY);
             } else {
-                this.trigger('scroll', 0, event.deltaY);
+                const horizontalScroll = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+                if (horizontalScroll) {
+                    this.trigger('scroll', event.deltaX, 0);
+                } else {
+                    this.trigger('scroll', 0, event.deltaY);
+                }
             }
         }
     };
@@ -74,6 +77,16 @@ export class InteractionManager extends EventEmitter {
             this.trigger('click', x, y);
         }
     };
+
+    private _handleDoubleClick = (event: MouseEvent) => {
+        if ((event.target as HTMLElement).tagName === 'CANVAS') {
+            if (this._isDragging) {
+                return;
+            }
+            const { x, y } = this._pointFromEvent(event);
+            this.trigger('dblclick', x, y);
+        }
+    }
 
     /**
      * handle down event

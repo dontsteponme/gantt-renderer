@@ -183,6 +183,25 @@ export class Gantt extends EventEmitter {
 
         });
 
+        this._interactionManager.on('dblclick', (x: number, y: number) => {
+            const hit = interactiveElementInView({ x: x, y: y, width: 1, height: 1 }, this._viewModel);
+            if (hit?.element.className) {
+                switch (hit.element.className) {
+                    case 'handle':
+                    case 'item':
+                        this.trigger('dblclick', 'item', offsetRect(hit), this._idFromParent(hit.parent));
+                        break;
+                    case 'row':
+                        this.trigger('dblclick', 'row', offsetRect(hit), this._idFromParent(hit));
+                        break;
+                    default:
+                        // ignore
+                        break;
+                }
+            }
+
+        });
+
         // listen for events
         let dragId: string;
         let resizing: boolean = false;
@@ -196,17 +215,21 @@ export class Gantt extends EventEmitter {
             if (!dragId) {
                 const hit = interactiveElementInView({ x: x, y: y, width: 1, height: 1 }, this._viewModel);
                 if (hit) {
+                    const id = this._idFromParent(hit.parent) ?? '';
                     if (hit.element.className === 'circleLeft') {
-                        this._linking = {
-                            x0: x,
-                            y0: y,
-                            x1: x,
-                            y1: y,
-                            id: this._idFromParent(hit.parent)
-                        };
+                        const row = findById(this.model.rows, id);
+                        if (!Boolean(row?.item?.after)) {
+                            this._linking = {
+                                x0: x,
+                                y0: y,
+                                x1: x,
+                                y1: y,
+                                id: id
+                            };
+                        }
                     } else {
                         resizing = 'handle' === hit.element.className;
-                        dragId = this._idFromParent(hit?.parent) ?? '';
+                        dragId = id;
                     }
                 }
             }
@@ -261,7 +284,7 @@ export class Gantt extends EventEmitter {
                 }
                 this._axis.min += offsetX;
                 this._axis.max += offsetX;
-                this.invalidate()
+                this.invalidate();
             }
             if (deltaY) {
                 // TODO: This should come from the parent

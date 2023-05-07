@@ -169,3 +169,71 @@ export const rowCount = (rows: RowModel[], ignoreCollapsed: boolean = false): nu
     }
     return count;
 };
+
+export type TextToFitMetrics = { lines: string[], width: number, height: number };
+export const textToFit = (text: string, width: number, height: number, ctx: CanvasRenderingContext2D): TextToFitMetrics => {
+    const words: string[] = text.split(' ');
+    const len: number = words.length;
+    const lines: TextToFitMetrics[] = [];
+    let prevMetrics: TextMetrics;
+    let line: string = '';
+    let y: number = 0;
+
+    for (let i = 0; i < len; i++) {
+        const word = words[i];
+        const tempLine = line ? line + ' ' + word : word;
+        const metrics = ctx.measureText(tempLine);
+        if (metrics.width > width) {
+            if (prevMetrics) {
+                const h = prevMetrics.fontBoundingBoxAscent + prevMetrics.fontBoundingBoxDescent;
+                y += h;
+                if (y >= height) {
+                    break;
+                }
+                lines.push({ lines: [line], width: prevMetrics.width, height: h});
+                prevMetrics = undefined;
+                line = '';
+                i -= 1;
+            } else {
+                lines.push({ lines: [tempLine], width: metrics.width, height: metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent });
+            }
+        } else {
+            line = tempLine;
+            prevMetrics = metrics;
+        }
+    }
+
+    if (line && prevMetrics.width < width) {
+        const h = prevMetrics.fontBoundingBoxAscent + prevMetrics.fontBoundingBoxDescent;
+        if (y + h < height) {
+            lines.push({ lines: [line], width: prevMetrics.width, height: h});
+            line = '';
+        }
+    }
+    if (line) {
+        const lastline = lines[lines.length - 1];
+        lastline.lines[0] = truncateLine(lastline.lines[0], width, ctx);
+    }
+
+    return lines.reduce((prev: TextToFitMetrics, curr: TextToFitMetrics): TextToFitMetrics => {
+        return {
+            lines: prev.lines.concat(curr.lines),
+            width: Math.max(prev.width, curr.width),
+            height: prev.height + curr.height,
+        }
+    });
+};
+
+export const truncateLine = (text: string, width: number, ctx: CanvasRenderingContext2D): string => {
+    const ellipsis = '\u{2026}';
+    const words = text.split(' ');
+    text += ellipsis;
+    let metrics = ctx.measureText(text);
+    while (metrics.width > width && words.length > 0) {
+        words.pop();
+        text = words.join(' ') + ellipsis;
+        metrics = ctx.measureText(text);
+    }
+
+    return text;
+};
