@@ -81,6 +81,7 @@ export interface ViewRect extends Rect {
     borderColor?: string;
     borderWidth?: number;
     backgroundColor?: string;
+    background?: CanvasGradient | CanvasPattern;
     borderRadius?: number;
 }
 

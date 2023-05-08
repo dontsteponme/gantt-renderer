@@ -71,8 +71,8 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                 } else {
                     path.rect(rect.x, rect.y, rect.width, rect.height);
                 }
-                if (rect.backgroundColor) {
-                    ctx.fillStyle = rect.backgroundColor;
+                if (rect.backgroundColor || rect.background) {
+                    ctx.fillStyle = rect.backgroundColor ?? rect.background;
                     ctx.fill(path);
                 }
                 if (rect.borderColor && rect.borderWidth) {

@@ -14,6 +14,7 @@ export const viewModelFromModel = (
 
     const axisAreaTop = axisAreaModel(model, definition, viewport, ctx);
     const left = leftColumnViewModel(model, definition, viewport, ctx);
+    const leftShadow = leftGradient({...viewport, x: left.width}, ctx);
     const rows = rowLinesViewModel(model, definition, viewport, ctx);
 
     const axisViewport = { ...viewport, x: left.width, width: viewport.width - left.width };
@@ -51,12 +52,29 @@ export const viewModelFromModel = (
                     rows,
                     itemView,
                     linkViewRect,
+                    leftShadow,
                 ]
             },
             references,
         ]
     };
 };
+
+const leftGradient = (viewport: Rect, ctx: CanvasRenderingContext2D): ViewRect => {
+    const w = 4;
+    const gradient = ctx.createLinearGradient(viewport.x, 0, viewport.x + w, 0);
+
+    // Add three color stops
+    gradient.addColorStop(0, "rgba(0, 0, 0, 0.1)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0");
+
+        return {
+        ...viewport,
+        width: w,
+        type: 'rect',
+        background: gradient,
+    };
+}
 
 const milestones = (milestones: Milestone[], definition: Definition, axis: Axis, viewport: Rect): ViewRect => {
     const viewRects: ViewRect[] = [];
