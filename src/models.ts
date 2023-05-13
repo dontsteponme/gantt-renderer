@@ -37,6 +37,7 @@ export interface Definition {
     columnWidth: number; // width of the task column
     yOffset: number; // vertical scroll offset
     granularity: PeriodType; // desired axis granularity
+    highlightedIds?: string[]; // rows to express highlighted state
     axis?: {
         start: number,
         end: number,
@@ -51,11 +52,18 @@ export interface Definition {
         rowFont?: string;
         weekend?: string;
         itemLabels?: string;
+        highlight?: string;
     };
     fonts?: {
         rows?: string;
         timeline?: string;
         item?: string;
+    },
+    shadows?: {
+        highlight?: {
+            blur: number;
+            color: string;
+        };
     }
 }
 
@@ -83,6 +91,8 @@ export interface ViewRect extends Rect {
     backgroundColor?: string;
     background?: CanvasGradient | CanvasPattern;
     borderRadius?: number;
+    shadowColor?: string;
+    shadowBlur?: number;
 }
 
 export interface Text extends ViewRect {

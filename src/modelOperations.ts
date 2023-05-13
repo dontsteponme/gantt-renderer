@@ -36,6 +36,33 @@ export const findById = (rows: RowModel[], id: string): RowModel | null => {
     return null;
 };
 
+/**
+ * Find a row model by way of sequential index
+ * @param rows
+ * @param id
+ * @returns
+ */
+export const findByIndex = (rows: RowModel[], index: number): RowModel | null => {
+    const len = rows.length;
+    for (let i = 0; i < len; i++) {
+        const row = rows[i];
+        if (i = index) {
+            return row;
+        } else if (row.children) {
+            const childIndex = index - i - 1;
+            const childCount = rowCount(row.children);
+            if (childIndex - childCount <= 0) {
+                const child = findByIndex(row.children, childIndex);
+                if (child) {
+                    return child;
+                }
+            }
+        }
+    }
+
+    return null;
+};
+
 export const childrenExtrema = (rows: RowModel[]): { start: number, end: number } => {
     let start: number = Number.MAX_SAFE_INTEGER;
     let end: number = Number.MIN_SAFE_INTEGER;

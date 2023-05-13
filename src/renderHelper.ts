@@ -71,6 +71,11 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                 } else {
                     path.rect(rect.x, rect.y, rect.width, rect.height);
                 }
+                if (rect.shadowBlur && rect.shadowColor) {
+                    ctx.save();
+                    ctx.shadowBlur = rect.shadowBlur;
+                    ctx.shadowColor = rect.shadowColor;
+                }
                 if (rect.backgroundColor || rect.background) {
                     ctx.fillStyle = rect.backgroundColor ?? rect.background;
                     ctx.fill(path);
@@ -79,6 +84,9 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                     ctx.strokeStyle = rect.borderColor;
                     ctx.lineWidth = rect.borderWidth;
                     ctx.stroke(path);
+                }
+                if (rect.shadowBlur && rect.shadowColor) {
+                    ctx.restore();
                 }
                 const len = rect.children?.length ?? 0;
                 if (len) {

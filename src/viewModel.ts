@@ -14,6 +14,10 @@ export const viewModelFromModel = (
 
     const axisAreaTop = axisAreaModel(model, definition, viewport, ctx);
     const left = leftColumnViewModel(model, definition, viewport, ctx);
+    const leftBackground = leftColumnViewModel(model, definition, viewport, ctx);
+    leftBackground.backgroundColor = definition.colors?.leftColumn ?? '#ffffff';
+    leftBackground.children.length = 0;
+
     const leftShadow = leftGradient({...viewport, x: left.width}, ctx);
     const rows = rowLinesViewModel(model, definition, viewport, ctx);
 
@@ -48,8 +52,9 @@ export const viewModelFromModel = (
                 height: viewport.height - axisAreaTop.height,
                 width: viewport.width,
                 children: [
-                    left,
+                    leftBackground,
                     rows,
+                    left,
                     itemView,
                     linkViewRect,
                     leftShadow,
@@ -691,18 +696,48 @@ const rowLinesViewModel = (
     ctx: CanvasRenderingContext2D
 ): ViewRect => {
 
-    const children: ViewRect[] = [];
+    const hasHighlight = definition.highlightedIds?.length > 0;
     const len = rowCount(model.rows);
-    for (let i = 0; i < len; i++) {
-        children.push({
-            type: 'rect',
-            width: viewport.width,
-            height: 1,
-            x: 0,
-            y: (i + 1) * definition.rowHeight + definition.yOffset,
-            backgroundColor: definition.colors?.rowBorder ?? 'rgb(230, 230, 230)'
-        });
-    }
+
+    const rowChildren = (rows: RowModel[], y): ViewRect[] => {
+        let rects: ViewRect[] = [];
+        const len = rows.length;
+        for (let i = 0; i < len; i++) {
+            const row = rows[i];
+            if (hasHighlight && definition.highlightedIds.indexOf(row.id) > -1) {
+                const highlight: ViewRect = {
+                    type: 'rect',
+                    width: viewport.width,
+                    height: definition.rowHeight,
+                    x: 0,
+                    y: y,
+                    backgroundColor: definition.colors?.highlight ?? 'rgb(255, 255, 255)'
+                };
+                if (definition.shadows?.highlight) {
+                    highlight.shadowBlur = definition.shadows.highlight.blur;
+                    highlight.shadowColor = definition.shadows.highlight.color;
+                }
+                rects.push(highlight);
+            }
+            rects.push({
+                type: 'rect',
+                width: viewport.width,
+                height: 1,
+                x: 0,
+                y: y + definition.rowHeight - 1,
+                backgroundColor: definition.colors?.rowBorder ?? 'rgb(230, 230, 230)'
+            });
+            y += definition.rowHeight;
+            if (row.children?.length > 0) {
+                rects = rects.concat(rowChildren(row.children, y));
+                y += rowCount(row.children) * definition.rowHeight;
+            }
+        }
+        return rects;
+    };
+
+    const children: ViewRect[] =  rowChildren(model.rows, definition.yOffset);
+
     return {
         x: 0,
         y: 0,
@@ -729,7 +764,6 @@ const leftColumnViewModel = (
     return {
         ...rect,
         type: 'rect',
-        backgroundColor: definition.colors?.leftColumn ?? '#ffffff',
         children: rowLabels(model.rows, definition, 5, definition.yOffset, rect, ctx)
     };
 };

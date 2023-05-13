@@ -75,15 +75,23 @@
             columnWidth: 200,
             yOffset: 0,
             collapsible: true,
+            highlightedIds: ['110'],
             granularity: 'd',
             colors: {
                 itemLabels: 'red',
                 links: 'blue',
+                highlight: 'white',
             },
             axis: {
                 start: new Date('2023-04-11').valueOf(),
                 end: new Date('2023-06-11').valueOf()
             },
+            shadows: {
+                highlight: {
+                    blur: 4,
+                    color: 'rgba(0, 0, 0, 0.2)'
+                }
+            }
         };
 
         const rows = [];
