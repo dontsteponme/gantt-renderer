@@ -264,3 +264,17 @@ export const truncateLine = (text: string, width: number, ctx: CanvasRenderingCo
 
     return text;
 };
+
+
+/**
+ * Calculates the distance between two points
+ * @param x0
+ * @param y0
+ * @param x1
+ * @param y1
+ * @returns
+ */
+export const distance = (x0: number, y0: number, x1: number, y1: number): number => {
+    // (x0 - x2)^2 + (y0 - y1)^2 = c^2
+    return Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2));
+};

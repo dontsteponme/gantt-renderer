@@ -1,9 +1,11 @@
 import { EventEmitter } from "./eventEmitter";
+import { distance } from "./modelOperations";
 
 /**
  * InteractionManager handles gesture detection
  */
 export class InteractionManager extends EventEmitter {
+    private static SMUDGE_RADIUS: number = 5;
 
     private _isDown: boolean = false;
     private _isDragging: boolean = false;
@@ -14,7 +16,6 @@ export class InteractionManager extends EventEmitter {
      * Add event listeners
      */
     public addEventListeners(): void {
-        window.addEventListener('pointermove', this._handleMove);
         window.addEventListener('pointerdown', this._handleDown);
         window.addEventListener('click', this._handleClick);
         window.addEventListener('dblclick', this._handleDoubleClick);
@@ -26,6 +27,7 @@ export class InteractionManager extends EventEmitter {
      */
     public removeEventListeners(): void {
         window.removeEventListener('pointermove', this._handleMove);
+        window.removeEventListener('pointerup', this._handleUp);
         window.removeEventListener('pointerdown', this._handleDown);
         window.removeEventListener('click', this._handleClick);
         window.removeEventListener('dblclick', this._handleDoubleClick);
@@ -97,6 +99,7 @@ export class InteractionManager extends EventEmitter {
             this._isDown = true;
             this._prevEvent = event;
             window.addEventListener('pointerup', this._handleUp);
+            window.addEventListener('pointermove', this._handleMove);
         }
     };
 
@@ -116,6 +119,7 @@ export class InteractionManager extends EventEmitter {
             });
         }
 
+        window.removeEventListener('pointermove', this._handleMove);
         window.removeEventListener('pointerup', this._handleUp);
         this._prevEvent = null;
         this._isDown = false;
@@ -127,11 +131,15 @@ export class InteractionManager extends EventEmitter {
      * @param event
      */
     private _handleMove = (event: PointerEvent) => {
-        if (this._isDown) {
-            const { x, y } = this._pointFromEvent(event);
-            this.trigger('drag', x, y, event.pageX - this._prevEvent.pageX, event.pageY - this._prevEvent.pageY);
-            this._prevEvent = event;
-            this._isDragging = true;
+        if (this._isDown && this._prevEvent) {
+            const prevX = this._prevEvent.pageX;
+            const prevY = this._prevEvent.pageY;
+            if (distance(prevX, prevY, event.pageX, event.pageY) > InteractionManager.SMUDGE_RADIUS) {
+                const { x, y } = this._pointFromEvent(event);
+                this.trigger('drag', x, y, event.pageX - prevX, event.pageY - prevY);
+                this._prevEvent = event;
+                this._isDragging = true;
+            }
         }
     };
 

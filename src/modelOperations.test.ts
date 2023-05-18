@@ -1,4 +1,4 @@
-import { axisExtrema, DAY, findById, rowCount, syncLinkedItems, validateModel } from './modelOperations';
+import { axisExtrema, DAY, distance, findById, rowCount, syncLinkedItems, validateModel } from './modelOperations';
 import { RowModel } from './models';
 
 let rowModel: RowModel[];
@@ -97,4 +97,8 @@ test('model is valid', () => {
     validateModel({ rows: rowModel, milestones: [] });
     expect(rowModel[1].item.start).toBe(0);
     expect(rowModel[1].item.end).toBe(DAY);
+});
+
+test('distance function', () => {
+    expect(distance(1, 2, 4, 6)).toEqual(5);
 });
