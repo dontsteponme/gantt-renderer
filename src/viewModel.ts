@@ -44,6 +44,7 @@ export const viewModelFromModel = (
         children: [
             axisAreaTop,
             axisView,
+            leftShadow,
             {
                 type: 'rect',
                 className: 'rowArea',
@@ -57,7 +58,6 @@ export const viewModelFromModel = (
                     left,
                     itemView,
                     linkViewRect,
-                    leftShadow,
                 ]
             },
             references,
@@ -192,7 +192,7 @@ const linksFromRow = (
                 rects.push({
                     type: 'rect',
                     x: x - r,
-                    y: (afterAbove ? afterRow.element.y - r : linkedRow.element.y + r) + (definition.rowHeight + labelHeight) / 2,
+                    y: afterRow.element.y - r + (definition.rowHeight + labelHeight) / 2,
                     width: d,
                     height: d,
                     backgroundColor: definition.colors?.links ?? '#ffffff',
@@ -287,7 +287,7 @@ const itemsFromRows = (
         if (rowY > viewport.height) {
             break;
         }
-        // make sure we are within teh viewport
+        // make sure we are within the viewport
         const withinView: boolean = rowY + definition.rowHeight > 0;
         if (withinView) {
             const children: ViewRect[] = [];
@@ -439,11 +439,11 @@ const itemsFromRows = (
 const item = (rect: ViewRect, definition: Definition): ViewRect => {
 
     const borderWidth: number = Math.floor(rect.height / 4) + 1;
-    const circleDiameter = rect.height - borderWidth;
-    const circleRadius = circleDiameter / 2;
+    const circleDiameter = Math.floor(rect.height - borderWidth);
+    const circleRadius = Math.floor(circleDiameter / 2);
     const circleLeft: ViewRect = {
         type: 'rect',
-        x: borderWidth / 2,
+        x: borderWidth / 2 + 2,
         y: (rect.height - circleDiameter) / 2,
         width: circleDiameter,
         height: circleDiameter,
@@ -471,7 +471,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
     const parentRect = { ...rect };
     parentRect.x -= circleRadius;
     parentRect.width += circleDiameter + borderWidth;
-    parentRect.children = [rect, circleLeft, circleRight];
+    parentRect.children = [circleRight, rect, circleLeft];
     delete parentRect.backgroundColor;
     delete parentRect.className;
 
@@ -565,8 +565,9 @@ const axisViewModel = (
     const ticks = new Ticks(axis, definition.granularity);
     let iterator = ticks.iterator();
     let tick = iterator.next();
+    let formatter = new Intl.DateTimeFormat('en-US', options);
     while (!tick.done) {
-        const text = new Intl.DateTimeFormat('en-US', options).format(tick.value.date);
+        const text = formatter.format(tick.value.date);
         const textX = tick.value.position;
         const metrics = ctx.measureText(text);
 
@@ -580,7 +581,7 @@ const axisViewModel = (
                 text: text,
                 color: fontColor,
                 font: font,
-                textAlign: 'center',
+                textAlign: 'left',
                 textBaseline: 'bottom'
             } as Text);
             prevLabelRight = textX + metrics.width;
@@ -603,22 +604,35 @@ const axisViewModel = (
                 height: viewport.height,
                 width: tomorrowPoint - textX,
                 backgroundColor: definition.colors?.weekend ?? parttern(),
-            } as ViewRect)
+            } as ViewRect);
+        }
+
+        if (definition.colors?.columnBorder) {
+            children.push({
+                type: 'rect',
+                x: textX,
+                y: labelRenderingHeight,
+                height: viewport.height,
+                width: 1,
+                backgroundColor: definition.colors?.columnBorder,
+            } as ViewRect);
         }
 
         tick = iterator.next();
     }
 
+    const leftPadding: number = 5;
     prevLabelRight = undefined;
     iterator = ticks.iterator(definition.granularity === 'd' ? 'm' : 'y');
     tick = iterator.next();
+    formatter = new Intl.DateTimeFormat('en-US', labelOptions);
     while (!tick.done) {
-        const text = new Intl.DateTimeFormat('en-US', labelOptions).format(tick.value.date);
+        const text = formatter.format(tick.value.date);
         const metrics = ctx.measureText(text);
         const xOffset = metrics.width / 2; // center justified
         let textX = tick.value.position;
-        if (textX - xOffset < 0) {
-            textX = metrics.width / 2;
+        if (textX - xOffset < leftPadding) {
+            textX = metrics.width / 2 + leftPadding;
             if (prevLabelRight) {
                 children.pop();
             }
@@ -719,14 +733,16 @@ const rowLinesViewModel = (
                 }
                 rects.push(highlight);
             }
-            rects.push({
-                type: 'rect',
-                width: viewport.width,
-                height: 1,
-                x: 0,
-                y: y + definition.rowHeight - 1,
-                backgroundColor: definition.colors?.rowBorder ?? 'rgb(230, 230, 230)'
-            });
+            if (definition.colors?.rowBorder) {
+                rects.push({
+                    type: 'rect',
+                    width: viewport.width,
+                    height: 1,
+                    x: 0,
+                    y: y + definition.rowHeight - 1,
+                    backgroundColor: definition.colors.rowBorder
+                });
+            }
             y += definition.rowHeight;
             if (row.children?.length > 0) {
                 rects = rects.concat(rowChildren(row.children, y));

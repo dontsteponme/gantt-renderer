@@ -49,6 +49,7 @@ export interface Definition {
         timelineFont?: string;
         leftColumn?: string;
         rowBorder?: string;
+        columnBorder?: string;
         rowFont?: string;
         weekend?: string;
         itemLabels?: string;

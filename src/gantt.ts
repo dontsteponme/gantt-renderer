@@ -374,12 +374,16 @@ export class Gantt extends EventEmitter {
      * handle size change
      */
     private _onSizeChange(): void {
-        this._canvas.width = this._width * devicePixelRatio;
-        this._canvas.height = this._height * devicePixelRatio;
-        this._canvas.style.width = `${this._width}px`;
-        this._canvas.style.height = `${this._height}px`;
-        this.ctx.scale(devicePixelRatio, devicePixelRatio);
-        this.axis.range = this._width - this._definition.columnWidth;
+        if (this._canvas) {
+            this._canvas.width = this._width * devicePixelRatio;
+            this._canvas.height = this._height * devicePixelRatio;
+            this._canvas.style.width = `${this._width}px`;
+            this._canvas.style.height = `${this._height}px`;
+            this.ctx.scale(devicePixelRatio, devicePixelRatio);
+        }
+        if (this.axis) {
+            this.axis.range = this._width - this._definition.columnWidth;
+        }
     }
 
     /**

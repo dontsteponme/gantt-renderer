@@ -21,6 +21,7 @@
             width: 100%;
             height: 100%;
         }
+
         .container {
             display: flex;
             flex-direction: row;
@@ -72,8 +73,10 @@
 
         const canvas = document.getElementById('canvas');
         const gantt = new ganttRenderer.Gantt(canvas);
+        let rowHeight = 50;
+
         gantt.definition = {
-            rowHeight: 50,
+            rowHeight: rowHeight,
             columnWidth: 200,
             yOffset: 0,
             collapsible: true,
@@ -83,6 +86,8 @@
                 itemLabels: 'red',
                 links: 'blue',
                 highlight: 'white',
+                columnBorder: 'rgb(230, 230, 230)',
+                // rowBorder: 'rgb(230, 230, 230)',
             },
             axis: {
                 start: new Date('2023-04-11').valueOf(),
@@ -159,258 +164,258 @@
         };
         gantt.model = {
             "milestones": [],
-                "rows": [
-                    {
-                        "id": "66",
-                        "label": "Test Task this is a new one that is long and will get cut off and it will be super ab asdf ",
-                        "item": {
-                            "start": 1681743779000,
-                            "end": 1681830179000,
-                            "color": "#1a6d2c",
-                            "after": ""
-                        },
-                        "children": []
+            "rows": [
+                {
+                    "id": "66",
+                    "label": "Test Task this is a new one that is long and will get cut off and it will be super ab asdf ",
+                    "item": {
+                        "start": 1681743779000,
+                        "end": 1681830179000,
+                        "color": "#1a6d2c",
+                        "after": ""
                     },
-                    {
-                        "id": "69",
-                        "label": "TestTask2",
-                        "item": {
-                            "start": 1681669732000,
-                            "end": 1682696928000,
-                            "color": "#c7c7c7",
-                            "after": ""
-                        },
-                        "children": [
-                            {
-                                "id": "109",
-                                "label": "TestTask21",
-                                "item": {
-                                    "start": 1681798186000,
-                                    "end": 1682143786000,
-                                    "color": "#5beece",
-                                    "after": ""
-                                },
-                                "children": []
-                            },
-                            {
-                                "id": "110",
-                                "label": "TestTask22",
-                                "item": {
-                                    "start": 1682143786000,
-                                    "end": 1682230186000,
-                                    "color": "#5beece",
-                                    "after": "109"
-                                },
-                                "children": []
-                            },
-                            {
-                                "id": "111",
-                                "label": "TestTask23",
-                                "item": {
-                                    "start": 1682205742000,
-                                    "end": 1682332144000,
-                                    "color": "#5beece",
-                                    "after": "110"
-                                },
-                                "children": []
-                            }
-                        ]
+                    "children": []
+                },
+                {
+                    "id": "69",
+                    "label": "TestTask2",
+                    "item": {
+                        "start": 1681669732000,
+                        "end": 1682696928000,
+                        "color": "#c7c7c7",
+                        "after": ""
                     },
-                    {
-                        "id": "112",
-                        "label": "TestTask3",
-                        "item": {
-                            "start": 1682332144000,
-                            "end": 1682418544000,
-                            "color": "#37c8fd",
-                            "after": "111"
-                        },
-                        "children": [
-                            {
-                                "id": "113",
-                                "label": "TestTask31",
-                                "item": {
-                                    "start": 1682418544000,
-                                    "end": 1682504944000,
-                                    "color": "#37c8fd",
-                                    "after": "112"
-                                },
-                                "children": []
+                    "children": [
+                        {
+                            "id": "109",
+                            "label": "TestTask21",
+                            "item": {
+                                "start": 1681798186000,
+                                "end": 1682143786000,
+                                "color": "#5beece",
+                                "after": ""
                             },
-                            {
-                                "id": "114",
-                                "label": "TestTask32",
-                                "item": {
-                                    "start": 1682504944000,
-                                    "end": 1682591344000,
-                                    "color": "#37c8fd",
-                                    "after": "113"
-                                },
-                                "children": [
-                                    {
-                                        "id": "115",
-                                        "label": "TestTask321",
-                                        "item": {
-                                            "start": 1682591344000,
-                                            "end": 1682677744000,
-                                            "color": "#37c8fd",
-                                            "after": "114"
-                                        },
-                                        "children": [
-                                            {
-                                                "id": "116",
-                                                "label": "TestTask3211",
-                                                "item": {
-                                                    "start": 1682677744000,
-                                                    "end": 1682764144000,
-                                                    "color": "#37c8fd",
-                                                    "after": "115"
-                                                },
-                                                "children": []
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
+                            "children": []
+                        },
+                        {
+                            "id": "110",
+                            "label": "TestTask22",
+                            "item": {
+                                "start": 1682143786000,
+                                "end": 1682230186000,
+                                "color": "#5beece",
+                                "after": "111"
+                            },
+                            "children": []
+                        },
+                        {
+                            "id": "111",
+                            "label": "TestTask23",
+                            "item": {
+                                "start": 1682205742000,
+                                "end": 1682332144000,
+                                "color": "#5beece",
+                                "after": "109"
+                            },
+                            "children": []
+                        }
+                    ]
+                },
+                {
+                    "id": "112",
+                    "label": "TestTask3",
+                    "item": {
+                        "start": 1682332144000,
+                        "end": 1682418544000,
+                        "color": "#37c8fd",
+                        "after": ""
                     },
-                    {
-                        "id": "117",
-                        "label": "TestTask3",
-                        "item": {
-                            "start": 1682301600000,
-                            "end": 1682480137000,
-                            "color": "#99274f",
-                            "after": ""
-                        },
-                        "children": [
-                            {
-                                "id": "118",
-                                "label": "TestTask31",
-                                "item": {
-                                    "start": 1682276400000,
-                                    "end": 1682362800000,
-                                    "color": "#99274f",
-                                    "after": ""
-                                },
-                                "children": []
+                    "children": [
+                        {
+                            "id": "113",
+                            "label": "TestTask31",
+                            "item": {
+                                "start": 1682418544000,
+                                "end": 1682504944000,
+                                "color": "#37c8fd",
+                                "after": "112"
                             },
-                            {
-                                "id": "119",
-                                "label": "TestTask32",
-                                "item": {
-                                    "start": 1682362800000,
-                                    "end": 1682449200000,
-                                    "color": "#99274f",
-                                    "after": "118"
-                                },
-                                "children": [
-                                    {
-                                        "id": "120",
-                                        "label": "TestTask321",
-                                        "item": {
-                                            "start": 1682276400000,
-                                            "end": 1682449922000,
-                                            "color": "#99274f",
-                                            "after": ""
-                                        },
-                                        "children": [
-                                            {
-                                                "id": "121",
-                                                "label": "TestTask3211",
-                                                "item": {
-                                                    "start": 1682276400000,
-                                                    "end": 1682362800000,
-                                                    "color": "#99274f",
-                                                    "after": ""
-                                                },
-                                                "children": []
+                            "children": []
+                        },
+                        {
+                            "id": "114",
+                            "label": "TestTask32",
+                            "item": {
+                                "start": 1682504944000,
+                                "end": 1682591344000,
+                                "color": "#37c8fd",
+                                "after": "113"
+                            },
+                            "children": [
+                                {
+                                    "id": "115",
+                                    "label": "TestTask321",
+                                    "item": {
+                                        "start": 1682591344000,
+                                        "end": 1682677744000,
+                                        "color": "#37c8fd",
+                                        "after": "114"
+                                    },
+                                    "children": [
+                                        {
+                                            "id": "116",
+                                            "label": "TestTask3211",
+                                            "item": {
+                                                "start": 1682677744000,
+                                                "end": 1682764144000,
+                                                "color": "#37c8fd",
+                                                "after": "115"
                                             },
-                                            {
-                                                "id": "122",
-                                                "label": "TestTask3212",
-                                                "item": {
-                                                    "start": 1682362800000,
-                                                    "end": 1682449200000,
-                                                    "color": "#99274f",
-                                                    "after": "121"
-                                                },
-                                                "children": []
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
+                                            "children": []
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "117",
+                    "label": "TestTask3",
+                    "item": {
+                        "start": 1682301600000,
+                        "end": 1682480137000,
+                        "color": "#99274f",
+                        "after": ""
                     },
-                    {
-                        "id": "123",
-                        "label": "NewTask",
-                        "item": {
-                            "start": 1681708604000,
-                            "end": 1682757366000,
-                            "color": "#c4d0aa",
-                            "after": ""
+                    "children": [
+                        {
+                            "id": "118",
+                            "label": "TestTask31",
+                            "item": {
+                                "start": 1682276400000,
+                                "end": 1682362800000,
+                                "color": "#99274f",
+                                "after": ""
+                            },
+                            "children": []
                         },
-                        "children": [
-                            {
-                                "id": "124",
-                                "label": "NewTask11",
-                                "item": {
-                                    "start": 1681710254000,
-                                    "end": 1682060602000,
-                                    "color": "#c4d0aa",
-                                    "after": ""
-                                },
-                                "children": []
+                        {
+                            "id": "119",
+                            "label": "TestTask32",
+                            "item": {
+                                "start": 1682362800000,
+                                "end": 1682449200000,
+                                "color": "#99274f",
+                                "after": "118"
                             },
-                            {
-                                "id": "125",
-                                "label": "NewTask12",
-                                "item": {
-                                    "start": 1682060602000,
-                                    "end": 1682362026000,
-                                    "color": "#c4d0aa",
-                                    "after": "124"
-                                },
-                                "children": []
+                            "children": [
+                                {
+                                    "id": "120",
+                                    "label": "TestTask321",
+                                    "item": {
+                                        "start": 1682276400000,
+                                        "end": 1682449922000,
+                                        "color": "#99274f",
+                                        "after": ""
+                                    },
+                                    "children": [
+                                        {
+                                            "id": "121",
+                                            "label": "TestTask3211",
+                                            "item": {
+                                                "start": 1682276400000,
+                                                "end": 1682362800000,
+                                                "color": "#99274f",
+                                                "after": ""
+                                            },
+                                            "children": []
+                                        },
+                                        {
+                                            "id": "122",
+                                            "label": "TestTask3212",
+                                            "item": {
+                                                "start": 1682362800000,
+                                                "end": 1682449200000,
+                                                "color": "#99274f",
+                                                "after": "121"
+                                            },
+                                            "children": []
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "123",
+                    "label": "NewTask",
+                    "item": {
+                        "start": 1681708604000,
+                        "end": 1682757366000,
+                        "color": "#c4d0aa",
+                        "after": ""
+                    },
+                    "children": [
+                        {
+                            "id": "124",
+                            "label": "NewTask11",
+                            "item": {
+                                "start": 1681710254000,
+                                "end": 1682060602000,
+                                "color": "#c4d0aa",
+                                "after": ""
                             },
-                            {
-                                "id": "126",
-                                "label": "NewTask13",
-                                "item": {
-                                    "start": 1682362026000,
-                                    "end": 1682601354000,
-                                    "color": "#c4d0aa",
-                                    "after": "125"
-                                },
-                                "children": []
+                            "children": []
+                        },
+                        {
+                            "id": "125",
+                            "label": "NewTask12",
+                            "item": {
+                                "start": 1682060602000,
+                                "end": 1682362026000,
+                                "color": "#c4d0aa",
+                                "after": "124"
                             },
-                            {
-                                "id": "127",
-                                "label": "NewTask14",
-                                "item": {
-                                    "start": 1682601354000,
-                                    "end": 1682770956000,
-                                    "color": "#c4d0aa",
-                                    "after": "126"
-                                },
-                                "children": []
+                            "children": []
+                        },
+                        {
+                            "id": "126",
+                            "label": "NewTask13",
+                            "item": {
+                                "start": 1682362026000,
+                                "end": 1682601354000,
+                                "color": "#c4d0aa",
+                                "after": "125"
                             },
-                            {
-                                "id": "128",
-                                "label": "NewTask15",
-                                "item": {
-                                    "start": 1682701200000,
-                                    "end": 1682787600000,
-                                    "color": "#c4d0aa",
-                                    "after": ""
-                                },
-                                "children": []
-                            }
-                        ]
-                    }
-                ]
+                            "children": []
+                        },
+                        {
+                            "id": "127",
+                            "label": "NewTask14",
+                            "item": {
+                                "start": 1682601354000,
+                                "end": 1682770956000,
+                                "color": "#c4d0aa",
+                                "after": "126"
+                            },
+                            "children": []
+                        },
+                        {
+                            "id": "128",
+                            "label": "NewTask15",
+                            "item": {
+                                "start": 1682701200000,
+                                "end": 1682787600000,
+                                "color": "#c4d0aa",
+                                "after": ""
+                            },
+                            "children": []
+                        }
+                    ]
+                }
+            ]
         }
         gantt.width = canvas.offsetWidth;
         gantt.height = canvas.offsetHeight;
