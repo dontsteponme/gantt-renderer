@@ -20,7 +20,7 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                 let x = text.x;
                 let y = text.y;
 
-                if (text.backgroundColor) {
+                if (text.background) {
                     const metrics = ctx.measureText(text.text);
                     const textHeight = (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent);
                     const background = { ...text, type: 'rect' } as ViewRect;
@@ -76,8 +76,8 @@ export const renderView = (ViewRect: ViewRect, ctx: CanvasRenderingContext2D) =>
                     ctx.shadowBlur = rect.shadowBlur;
                     ctx.shadowColor = rect.shadowColor;
                 }
-                if (rect.backgroundColor || rect.background) {
-                    ctx.fillStyle = rect.backgroundColor ?? rect.background;
+                if (rect.background) {
+                    ctx.fillStyle = rect.background;
                     ctx.fill(path);
                 }
                 if (rect.borderColor && rect.borderWidth) {

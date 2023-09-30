@@ -13,9 +13,9 @@ export const viewModelFromModel = (
 ): ViewRect => {
 
     const axisAreaTop = axisAreaModel(model, definition, viewport, ctx);
-    const left = leftColumnViewModel(model, definition, viewport, ctx);
+    const left = leftColumnViewModel(model, definition, viewport, ctx, 'rowLabels');
     const leftBackground = leftColumnViewModel(model, definition, viewport, ctx);
-    leftBackground.backgroundColor = definition.colors?.leftColumn ?? '#ffffff';
+    leftBackground.background = definition.colors?.leftColumn ?? '#ffffff';
     leftBackground.children.length = 0;
 
     const leftShadow = leftGradient({...viewport, x: left.width}, ctx);
@@ -40,11 +40,13 @@ export const viewModelFromModel = (
     return {
         ...viewport,
         type: 'rect',
-        backgroundColor: definition.colors?.canvas ?? 'rgb(240, 240, 240)',
+        background: definition.colors?.canvas ?? 'rgb(240, 240, 240)',
         children: [
             axisAreaTop,
             axisView,
             leftShadow,
+            rows,
+            references,
             {
                 type: 'rect',
                 className: 'rowArea',
@@ -54,13 +56,11 @@ export const viewModelFromModel = (
                 width: viewport.width,
                 children: [
                     leftBackground,
-                    rows,
                     left,
                     itemView,
                     linkViewRect,
                 ]
             },
-            references,
         ]
     };
 };
@@ -93,7 +93,7 @@ const milestones = (milestones: Milestone[], definition: Definition, axis: Axis,
             y: 0,
             width: 1,
             height: viewport.height,
-            backgroundColor: milestone.color
+            background: milestone.color
         });
         if (milestone.name) {
             const font = definition.fonts?.item ?? '10pt -apple-system, Helvetica, Calibri';
@@ -108,7 +108,7 @@ const milestones = (milestones: Milestone[], definition: Definition, axis: Axis,
                 textBaseline: 'top',
                 text: milestone.name,
                 color: '#fff',
-                backgroundColor: milestone.color,
+                background: milestone.color,
                 paddingBottom: 4,
                 paddingLeft: 4,
                 paddingRight: 4,
@@ -187,7 +187,7 @@ const linksFromRow = (
                     y: (afterAbove ? afterRow.element.y : linkedRow.element.y) + (definition.rowHeight + labelHeight) / 2,
                     width: 2,
                     height: Math.abs(afterRow.element.y - linkedRow.element.y),
-                    backgroundColor: definition.colors?.links ?? 'rbga(255, 255, 255, 0.4)',
+                    background: definition.colors?.links ?? 'rbga(255, 255, 255, 0.4)',
                 });
                 rects.push({
                     type: 'rect',
@@ -195,7 +195,7 @@ const linksFromRow = (
                     y: afterRow.element.y - r + (definition.rowHeight + labelHeight) / 2,
                     width: d,
                     height: d,
-                    backgroundColor: definition.colors?.links ?? '#ffffff',
+                    background: definition.colors?.links ?? '#ffffff',
                     borderRadius: r,
                 });
             }
@@ -346,7 +346,7 @@ const itemsFromRows = (
                         y: labelHeight,
                         width: end - start,
                         height: itemHeight,
-                        backgroundColor: row.item.color,
+                        background: row.item.color,
                         borderRadius: 3,
                     },
                     definition
@@ -372,7 +372,7 @@ const itemsFromRows = (
                             y: itemHeight / 2,
                             width: width,
                             height: 1,
-                            backgroundColor: color
+                            background: color
                         },
                         {
                             type: 'rect',
@@ -381,7 +381,7 @@ const itemsFromRows = (
                             y: 0,
                             width: 1,
                             height: itemHeight,
-                            backgroundColor: color
+                            background: color
                         },
                         {
                             type: 'rect',
@@ -390,7 +390,7 @@ const itemsFromRows = (
                             y: 0,
                             width: 1,
                             height: itemHeight,
-                            backgroundColor: color
+                            background: color
                         },
                     ],
                 });
@@ -449,8 +449,8 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
         height: circleDiameter,
         borderRadius: circleDiameter,
         className: 'circleLeft',
-        backgroundColor: definition.colors?.links ?? '#ffffff',
-        borderColor: rect.backgroundColor,
+        background: definition.colors?.links ?? '#ffffff',
+        borderColor: typeof rect.background === 'string' ? rect.background : undefined,
         borderWidth: borderWidth,
         interactive: true,
     };
@@ -464,7 +464,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
         height: rightDiameter,
         borderRadius: circleDiameter,
         className: 'handle',
-        backgroundColor: rect.backgroundColor,
+        background: rect.background,
         interactive: true,
     };
 
@@ -472,7 +472,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
     parentRect.x -= circleRadius;
     parentRect.width += circleDiameter + borderWidth;
     parentRect.children = [circleRight, rect, circleLeft];
-    delete parentRect.backgroundColor;
+    delete parentRect.background;
     delete parentRect.className;
 
     const handle: ViewRect = {
@@ -492,7 +492,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
-                backgroundColor: 'rgba(0, 0, 0, 0.3)'
+                background: 'rgba(0, 0, 0, 0.3)'
             },
             {
                 type: 'rect',
@@ -500,7 +500,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                background: 'rgba(255, 255, 255, 0.2)'
             },
             {
                 type: 'rect',
@@ -508,7 +508,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
-                backgroundColor: 'rgba(0, 0, 0, 0.3)'
+                background: 'rgba(0, 0, 0, 0.3)'
             },
             {
                 type: 'rect',
@@ -516,7 +516,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
                 y: 0,
                 width: 1,
                 height: rect.height - 8,
-                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                background: 'rgba(255, 255, 255, 0.2)'
             }
         ]
     };
@@ -603,7 +603,7 @@ const axisViewModel = (
                 y: labelRenderingHeight,
                 height: viewport.height,
                 width: tomorrowPoint - textX,
-                backgroundColor: definition.colors?.weekend ?? parttern(),
+                background: definition.colors?.weekend ?? parttern(),
             } as ViewRect);
         }
 
@@ -614,7 +614,7 @@ const axisViewModel = (
                 y: labelRenderingHeight,
                 height: viewport.height,
                 width: 1,
-                backgroundColor: definition.colors?.columnBorder,
+                background: definition.colors?.columnBorder,
             } as ViewRect);
         }
 
@@ -698,7 +698,7 @@ const axisAreaModel = (
         y: 0,
         width: viewport.width,
         height: definition.rowHeight,
-        backgroundColor: definition.colors?.timeline ?? '#ffffff',
+        background: definition.colors?.timeline ?? '#ffffff',
         children: []
     };
 };
@@ -725,7 +725,7 @@ const rowLinesViewModel = (
                     height: definition.rowHeight,
                     x: 0,
                     y: y,
-                    backgroundColor: definition.colors?.highlight ?? 'rgb(255, 255, 255)'
+                    background: definition.colors?.highlight ?? 'rgb(255, 255, 255)'
                 };
                 if (definition.shadows?.highlight) {
                     highlight.shadowBlur = definition.shadows.highlight.blur;
@@ -740,7 +740,7 @@ const rowLinesViewModel = (
                     height: 1,
                     x: 0,
                     y: y + definition.rowHeight - 1,
-                    backgroundColor: definition.colors.rowBorder
+                    background: definition.colors.rowBorder
                 });
             }
             y += definition.rowHeight;
@@ -752,7 +752,7 @@ const rowLinesViewModel = (
         return rects;
     };
 
-    const children: ViewRect[] =  rowChildren(model.rows, definition.yOffset);
+    const children: ViewRect[] = rowChildren(model.rows, definition.yOffset);
 
     return {
         x: 0,
@@ -768,7 +768,8 @@ const leftColumnViewModel = (
     model: GanttModel,
     definition: Definition,
     viewport: Rect,
-    ctx: CanvasRenderingContext2D
+    ctx: CanvasRenderingContext2D,
+    className?: string,
 ): ViewRect => {
     const rect = {
         x: 0,
@@ -779,6 +780,7 @@ const leftColumnViewModel = (
 
     return {
         ...rect,
+        className: className,
         type: 'rect',
         children: rowLabels(model.rows, definition, 5, definition.yOffset, rect, ctx)
     };
@@ -795,7 +797,8 @@ const rowLabels = (
     let shapes: ViewRect[] = [];
     let labelY: number = definition.rowHeight / 2;
     let hasChildren: boolean = definition.collapsible && rows.some(m => m.children.length > 0);
-    const rowPadding = hasChildren ? 14 : 0;
+    const adornmentSpace: number = 5;
+    const rowPadding = hasChildren ? 14 : adornmentSpace * 2;
     x += rowPadding;
 
     const font = definition.fonts?.rows ?? '10pt -apple-system, Helvetica, Calibri';
@@ -804,6 +807,7 @@ const rowLabels = (
 
     for (let i = 0; i < len; i++) {
         const row = rows[i];
+        // check if row is in view
         if (collides(viewport, { x: x, y: y, width: 1, height: definition.rowHeight })) {
             // hit target for row
             shapes.push({
@@ -817,18 +821,30 @@ const rowLabels = (
                 width: definition.columnWidth,
                 height: definition.rowHeight,
             });
+            // check for adornment color
+            if (row.adornmentColor) {
+                shapes.push({
+                    type: 'rect',
+                    interactive: false,
+                    children: [],
+                    x: 0,
+                    y: y,
+                    width: adornmentSpace,
+                    height: definition.rowHeight,
+                    background: row.adornmentColor,
+                });
+            }
+
             // check is label is too long for given space
             let metrics = ctx.measureText(row.label);
             if (metrics.width + x > viewport.width) {
                 ctx.font = font;
                 const fitMetrics = textToFit(row.label, viewport.width - 20 - x, definition.rowHeight, ctx);
-                // const currY = y;
                 const centerY = (definition.rowHeight - fitMetrics.height) / 2;
                 const perLine = fitMetrics.height / fitMetrics.lines.length;
                 fitMetrics.lines.forEach((line: string, i: number) => {
                     shapes.push(textFromLabel(line, font, color, x, y + perLine * i + centerY, 'top'));
                 });
-                // y = currY;
             } else {
                 shapes.push(textFromLabel(row.label, font, color, x, y + labelY));
             }

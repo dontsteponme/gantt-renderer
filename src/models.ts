@@ -8,6 +8,7 @@ export interface GanttModel {
 export interface RowModel {
     id: string;
     label: string;
+    adornmentColor?: string;
     children: RowModel[];
     item?: ItemModel;
     collapsed?: boolean;
@@ -25,9 +26,14 @@ export interface ItemModel {
 }
 
 export interface Milestone {
-    name?: string,
-    date: number,
-    color: string,
+    name?: string;
+    date: number;
+    color: string;
+}
+
+export interface Plugin {
+    section: '';
+
 }
 
 export interface Definition {
@@ -65,7 +71,8 @@ export interface Definition {
             blur: number;
             color: string;
         };
-    }
+    },
+    plugins?: Plugin[],
 }
 
 export type ViewRectType = 'rect' | 'text' | 'custom';
@@ -89,8 +96,7 @@ export interface ViewRect extends Rect {
     type: ViewRectType;
     borderColor?: string;
     borderWidth?: number;
-    backgroundColor?: string;
-    background?: CanvasGradient | CanvasPattern;
+    background?: string | CanvasGradient | CanvasPattern;
     borderRadius?: number;
     shadowColor?: string;
     shadowBlur?: number;
