@@ -19,7 +19,8 @@ export const viewModelFromModel = (
     leftBackground.children.length = 0;
 
     const leftShadow = leftGradient({...viewport, x: left.width}, ctx);
-    const rows = rowLinesViewModel(model, definition, viewport, ctx);
+    const rowViewport = {...viewport, y: viewport.y + axisAreaTop.height, height: viewport.height - axisAreaTop.height};
+    const rows = rowLinesViewModel(model, definition, rowViewport, ctx);
 
     const axisViewport = { ...viewport, x: left.width, width: viewport.width - left.width };
     const labelArea = Math.ceil(labelHeight(model.rows, definition, ctx)) + 4;
@@ -756,7 +757,7 @@ const rowLinesViewModel = (
 
     return {
         x: 0,
-        y: 0,
+        y: viewport.y,
         width: viewport.width,
         height: len * definition.rowHeight,
         type: 'rect',
