@@ -45,9 +45,7 @@ export const viewModelFromModel = (
         children: [
             axisAreaTop,
             axisView,
-            leftShadow,
             rows,
-            references,
             {
                 type: 'rect',
                 className: 'rowArea',
@@ -62,6 +60,8 @@ export const viewModelFromModel = (
                     linkViewRect,
                 ]
             },
+            references,
+            leftShadow,
         ]
     };
 };
@@ -444,7 +444,7 @@ const item = (rect: ViewRect, definition: Definition): ViewRect => {
     const circleRadius = Math.floor(circleDiameter / 2);
     const circleLeft: ViewRect = {
         type: 'rect',
-        x: borderWidth / 2 + 2,
+        x: borderWidth / 2,
         y: (rect.height - circleDiameter) / 2,
         width: circleDiameter,
         height: circleDiameter,
