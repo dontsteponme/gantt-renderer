@@ -52,23 +52,22 @@ export class Ticks {
      */
     private _nextPeriod(value: number, periodType: PeriodType): Date {
         const date = new Date(value);
-        date.setUTCHours(0, date.getTimezoneOffset(), 0, 0);
         switch (periodType) {
             case 'y':
-                const currYear = date.getUTCFullYear();
-                date.setUTCFullYear(currYear + 1);
+                const currYear = date.getFullYear();
+                date.setFullYear(currYear + 1);
                 break;
             case 'w':
-                const dateOMonth = date.getUTCDate();
-                date.setUTCDate(dateOMonth + 7);
+                const dayOfMonth = date.getDate();
+                date.setDate(dayOfMonth + 7);
                 break;
             case 'm':
-                const currMonth = date.getUTCMonth();
-                date.setUTCMonth(currMonth + 1);
+                const currMonth = date.getMonth();
+                date.setMonth(currMonth + 1);
                 break;
             case 'd':
             default:
-                date.setUTCDate(date.getUTCDate() + 1);
+                date.setDate(date.getDate() + 1);
                 break;
         }
 
@@ -76,7 +75,7 @@ export class Ticks {
     }
 
     /**
-     * Find the nearest date period boudary
+     * Find the nearest date period boundary
      * @param value
      * @param periodType
      * @returns
@@ -85,21 +84,36 @@ export class Ticks {
         const date = new Date(value);
         switch (periodType) {
             case 'w':
-                const dayOWeek = date.getUTCDay();
-                const dateOMonth = date.getUTCDate();
-                date.setUTCDate(dateOMonth - dayOWeek);
+                let dayOfWeek: number = date.getDate();
+                const incrementWeek: boolean = dayOfWeek > 2;
+                // looping below because calendar math and timezones are giving me a headache
+                while (dayOfWeek !== 0) {
+                    if (incrementWeek) {
+                        date.setHours(date.getHours() + 1);
+                    } else {
+                        date.setHours(date.getHours() - 1);
+                    }
+                    dayOfWeek = date.getDay();
+                }
                 break;
             case 'm':
-                date.setUTCDate(1);
+                let dayOfMonth = date.getDate();
+                const incrementMonth = dayOfMonth > 15;
+                // looping below because calendar math and timezones are giving me a headache
+                while (dayOfMonth !== 1) {
+                    date.setDate(
+                        incrementMonth ? dayOfMonth + 1 : dayOfMonth - 1
+                    );
+                    dayOfMonth = date.getDate();
+                }
                 break;
             case 'y':
-                date.setUTCFullYear(date.getUTCFullYear(), 0, 1);
+                date.setFullYear(date.getFullYear(), 0, 1);
                 break;
             case 'd':
             default:
                 break;
         }
-        date.setUTCHours(0, date.getTimezoneOffset(), 0, 0);
         return date;
     }
 }

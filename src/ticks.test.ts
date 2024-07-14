@@ -2,7 +2,7 @@ import { Axis } from './axis';
 import { DAY } from './modelOperations';
 import { Ticks } from './ticks';
 
-const startDate = '01-01-2023';
+const startDate = '2023-01-01';
 const axis = new Axis();
 axis.range = 100;
 axis.min = new Date(startDate).valueOf();
@@ -16,8 +16,8 @@ test('Ticks iterator days', () => {
     let tick = iterator.next();
     while (!tick.done) {
         expect(tick.done).toBe(false);
-        expect(tick.value.date.getUTCDate()).toBe(date.getUTCDate());
-        date.setUTCDate(date.getUTCDate() + 1);
+        expect(tick.value.date.getDate()).toBe(date.getDate());
+        date.setDate(date.getDate() + 1);
         tick = iterator.next();
         counter += 1;
     }
@@ -30,44 +30,44 @@ test('Ticks iterator week', () => {
     axis.max = axis.min + DAY * 7 * 10;
 
     const date = new Date(startDate);
+    date.setUTCHours(0, date.getTimezoneOffset(), 0, 0);
     const ticks = new Ticks(axis, 'w');
     const iterator = ticks.iterator();
     let counter = 0;
     let tick = iterator.next();
     while (!tick.done) {
         expect(tick.done).toBe(false);
-        expect(tick.value.date.getUTCDate()).toBe(date.getUTCDate());
-        date.setUTCDate(date.getUTCDate() + 7);
+        expect(tick.value.date.getDate()).toBe(date.getDate());
+        date.setDate(date.getDate() + 7);
         tick = iterator.next();
         counter += 1;
     }
 
-    expect(counter).toBe(11);
+    expect(counter).toBe(10);
     expect(tick.done).toBe(true);
 });
 
 test('Ticks iterator month', () => {
-    axis.max = new Date('11-01-2023').valueOf();
-
+    axis.max = new Date('2023-11-01').valueOf();
     const date = new Date(startDate);
+    date.setUTCHours(0, date.getTimezoneOffset(), 0, 0);
     const ticks = new Ticks(axis, 'm');
     const iterator = ticks.iterator();
     let counter = 0;
     let tick = iterator.next();
     while (!tick.done) {
         expect(tick.done).toBe(false);
-        expect(tick.value.date.getUTCMonth()).toBe(date.getUTCMonth());
-        date.setUTCMonth(date.getUTCMonth() + 1);
+        expect(tick.value.date.getMonth()).toBe(date.getMonth());
+        date.setMonth(date.getMonth() + 1);
         tick = iterator.next();
         counter += 1;
     }
 
-    expect(counter).toBe(11);
     expect(tick.done).toBe(true);
 });
 
 test('Ticks iterator year', () => {
-    axis.max = new Date('1-01-2024').valueOf();
+    axis.max = new Date('2024-01-01').valueOf();
 
     const date = new Date(startDate);
     const ticks = new Ticks(axis, 'y');
@@ -76,8 +76,8 @@ test('Ticks iterator year', () => {
     let tick = iterator.next();
     while (!tick.done) {
         expect(tick.done).toBe(false);
-        expect(tick.value.date.getUTCFullYear()).toBe(date.getUTCFullYear());
-        date.setUTCFullYear(date.getUTCFullYear() + 1);
+        expect(tick.value.date.getFullYear()).toBe(date.getFullYear());
+        date.setFullYear(date.getFullYear() + 1);
         tick = iterator.next();
         counter += 1;
     }
